@@ -36,6 +36,34 @@ enum UserRole {
     USER
 }
 
+enum SubscriptionStatus {
+    TRIAL
+    ACTIVE
+    PAST_DUE
+    CANCELLED
+    EXPIRED
+    INCOMPLETE
+    INCOMPLETE_EXPIRED
+}
+
+enum SubscriptionPlanName {
+    FREE
+    PRO
+    ENTERPRISE
+}
+
+enum BillingCycle {
+    MONTHLY
+    YEARLY
+}
+
+enum PaymentStatus {
+    PENDING
+    SUCCEEDED
+    FAILED
+    REFUNDED
+}
+
 model User {
     id            String    @id @default(cuid())
     name          String?
@@ -54,6 +82,10 @@ model User {
 
     role      UserRole @default(USER)
     hasAccess Boolean  @default(false)
+
+    // Subscription relationship
+    subscription Subscription?
+    usage        Usage[]
 
     // Document system
     documents BaseDocument[]
@@ -143,4 +175,84 @@ model GeneratedImage {
     userId    String
     user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
     prompt    String
+}
+
+// Subscription models
+model SubscriptionPlan {
+    id                     String               @id @default(cuid())
+    name                   SubscriptionPlanName @unique
+    displayName            String
+    description            String?
+    priceMonthly           Float                @default(0)
+    priceYearly            Float?               @default(0)
+    stripePriceIdMonthly   String?
+    stripePriceIdYearly    String?
+    features               Json // Store feature flags as JSON
+    limits                 Json // Store usage limits as JSON
+    isActive               Boolean              @default(true)
+    createdAt              DateTime             @default(now())
+    updatedAt              DateTime             @updatedAt
+    subscriptions          Subscription[]
+
+    @@index([name])
+}
+
+model Subscription {
+    id                   String             @id @default(cuid())
+    userId               String             @unique
+    user                 User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+    planId               String
+    plan                 SubscriptionPlan   @relation(fields: [planId], references: [id])
+    status               SubscriptionStatus @default(TRIAL)
+    billingCycle         BillingCycle?
+    stripeSubscriptionId String?            @unique
+    stripeCustomerId     String?            @unique
+    currentPeriodStart   DateTime?
+    currentPeriodEnd     DateTime?
+    cancelAtPeriodEnd    Boolean            @default(false)
+    trialEndsAt          DateTime?
+    createdAt            DateTime           @default(now())
+    updatedAt            DateTime           @updatedAt
+    payments             Payment[]
+    usage                Usage[]
+
+    @@index([userId])
+    @@index([status])
+    @@index([stripeSubscriptionId])
+}
+
+model Payment {
+    id                    String         @id @default(cuid())
+    subscriptionId        String
+    subscription          Subscription   @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+    amount                Float
+    currency              String         @default("usd")
+    status                PaymentStatus  @default(PENDING)
+    stripePaymentIntentId String?        @unique
+    stripeInvoiceId       String?        @unique
+    billingCycle          BillingCycle?
+    paidAt                DateTime?
+    createdAt             DateTime       @default(now())
+    updatedAt             DateTime       @updatedAt
+
+    @@index([subscriptionId])
+    @@index([status])
+    @@index([stripePaymentIntentId])
+}
+
+model Usage {
+    id             String        @id @default(cuid())
+    userId         String
+    user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+    subscriptionId String?
+    subscription   Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+    feature        String // e.g., "presentations_created", "api_calls", "images_generated"
+    amount         Int           @default(1)
+    period         String // e.g., "2024-01" for monthly tracking
+    metadata       Json? // Additional context
+    createdAt      DateTime      @default(now())
+
+    @@index([userId, feature, period])
+    @@index([subscriptionId])
+    @@index([period])
 }
