@@ -1,0 +1,5 @@
+# System files
+.DS_Store
+
+# Markdown files
+*.md
