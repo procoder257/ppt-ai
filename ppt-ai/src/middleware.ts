@@ -7,6 +7,7 @@ export async function middleware(request: NextRequest) {
 
   const isAuthPage = pathname.startsWith("/auth");
   const isPricingPage = pathname.startsWith("/pricing");
+  const isAdminPage = pathname.startsWith("/admin");
   const isApiRoute = pathname.startsWith("/api");
 
   console.log("[Middleware]", {
@@ -37,6 +38,22 @@ export async function middleware(request: NextRequest) {
         request.url,
       ),
     );
+  }
+
+  // Admin route protection
+  if (isAdminPage) {
+    if (!session) {
+      console.log("[Middleware] Admin page (Unauthenticated) → /auth/signin");
+      return NextResponse.redirect(new URL("/auth/signin", request.url));
+    }
+
+    const adminEmails = process.env.ADMIN_EMAILS?.split(",") || [];
+    const userEmail = session.user?.email;
+
+    if (!userEmail || !adminEmails.includes(userEmail)) {
+      console.log("[Middleware] Admin page (Unauthorized) → /");
+      return NextResponse.redirect(new URL("/", request.url));
+    }
   }
 
   // If user is on auth page but already signed in, redirect to pricing (subscription check happens there)
