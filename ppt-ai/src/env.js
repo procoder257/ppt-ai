@@ -22,6 +22,12 @@ export const env = createEnv({
       process.env.NODE_ENV === "production"
         ? z.string()
         : z.string().optional(),
+
+    // PayPal Configuration
+    PAYPAL_CLIENT_ID: z.string(),
+    PAYPAL_CLIENT_SECRET: z.string(),
+    PAYPAL_WEBHOOK_ID: z.string().optional(),
+    PAYPAL_MODE: z.enum(["sandbox", "live"]).default("sandbox"),
   },
 
   runtimeEnv: {
@@ -35,6 +41,10 @@ export const env = createEnv({
     TOGETHER_AI_API_KEY: process.env.TOGETHER_AI_API_KEY,
     NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET,
     NEXTAUTH_URL: process.env.NEXTAUTH_URL,
+    PAYPAL_CLIENT_ID: process.env.PAYPAL_CLIENT_ID,
+    PAYPAL_CLIENT_SECRET: process.env.PAYPAL_CLIENT_SECRET,
+    PAYPAL_WEBHOOK_ID: process.env.PAYPAL_WEBHOOK_ID,
+    PAYPAL_MODE: process.env.PAYPAL_MODE,
   },
 
   skipValidation: !!process.env.SKIP_ENV_VALIDATION,

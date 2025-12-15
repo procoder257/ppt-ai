@@ -3,20 +3,34 @@ import { NextResponse, type NextRequest } from "next/server";
 
 export async function middleware(request: NextRequest) {
   const session = await auth();
-  const isAuthPage = request.nextUrl.pathname.startsWith("/auth");
+  const pathname = request.nextUrl.pathname;
 
-  // Always redirect from root to /presentation
-  if (request.nextUrl.pathname === "/") {
-    return NextResponse.redirect(new URL("/presentation", request.url));
-  }
+  const isAuthPage = pathname.startsWith("/auth");
+  const isPricingPage = pathname.startsWith("/pricing");
+  const isApiRoute = pathname.startsWith("/api");
 
-  // If user is on auth page but already signed in, redirect to home page
-  if (isAuthPage && session) {
-    return NextResponse.redirect(new URL("/presentation", request.url));
+  console.log("[Middleware]", {
+    path: pathname,
+    hasSession: !!session,
+    isAuthPage,
+    isPricingPage,
+    isApiRoute
+  });
+
+  // Root path handling
+  if (pathname === "/") {
+    if (session) {
+      console.log("[Middleware] Root (Authenticated) → /pricing");
+      return NextResponse.redirect(new URL("/pricing", request.url));
+    } else {
+      console.log("[Middleware] Root (Unauthenticated) → /auth/signin");
+      return NextResponse.redirect(new URL("/auth/signin", request.url));
+    }
   }
 
   // If user is not authenticated and trying to access a protected route, redirect to sign-in
-  if (!session && !isAuthPage && !request.nextUrl.pathname.startsWith("/api")) {
+  if (!session && !isAuthPage && !isPricingPage && !isApiRoute) {
+    console.log("[Middleware] No session on protected route → /auth/signin");
     return NextResponse.redirect(
       new URL(
         `/auth/signin?callbackUrl=${encodeURIComponent(request.url)}`,
@@ -25,6 +39,13 @@ export async function middleware(request: NextRequest) {
     );
   }
 
+  // If user is on auth page but already signed in, redirect to pricing (subscription check happens there)
+  if (isAuthPage && session) {
+    console.log("[Middleware] Already signed in on auth page → /pricing");
+    return NextResponse.redirect(new URL("/pricing", request.url));
+  }
+
+  console.log("[Middleware] Allowing request to continue");
   return NextResponse.next();
 }
 

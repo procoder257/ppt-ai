@@ -185,8 +185,15 @@ model SubscriptionPlan {
     description            String?
     priceMonthly           Float                @default(0)
     priceYearly            Float?               @default(0)
+
+    // PayPal-specific fields
+    paypalPlanIdMonthly    String?
+    paypalPlanIdYearly     String?
+
+    // Keep Stripe fields for backward compatibility
     stripePriceIdMonthly   String?
     stripePriceIdYearly    String?
+
     features               Json // Store feature flags as JSON
     limits                 Json // Store usage limits as JSON
     isActive               Boolean              @default(true)
@@ -205,8 +212,16 @@ model Subscription {
     plan                 SubscriptionPlan   @relation(fields: [planId], references: [id])
     status               SubscriptionStatus @default(TRIAL)
     billingCycle         BillingCycle?
+
+    // PayPal-specific fields
+    paypalSubscriptionId String?            @unique
+    paypalBillingAgreementId String?        @unique
+    paypalPayerId        String?
+
+    // Keep Stripe fields for backward compatibility (nullable)
     stripeSubscriptionId String?            @unique
     stripeCustomerId     String?            @unique
+
     currentPeriodStart   DateTime?
     currentPeriodEnd     DateTime?
     cancelAtPeriodEnd    Boolean            @default(false)
@@ -218,6 +233,7 @@ model Subscription {
 
     @@index([userId])
     @@index([status])
+    @@index([paypalSubscriptionId])
     @@index([stripeSubscriptionId])
 }
 
@@ -228,8 +244,16 @@ model Payment {
     amount                Float
     currency              String         @default("usd")
     status                PaymentStatus  @default(PENDING)
+
+    // PayPal-specific fields
+    paypalTransactionId   String?        @unique
+    paypalOrderId         String?        @unique
+    paypalCaptureId       String?        @unique
+
+    // Keep Stripe fields for backward compatibility
     stripePaymentIntentId String?        @unique
     stripeInvoiceId       String?        @unique
+
     billingCycle          BillingCycle?
     paidAt                DateTime?
     createdAt             DateTime       @default(now())
@@ -237,6 +261,7 @@ model Payment {
 
     @@index([subscriptionId])
     @@index([status])
+    @@index([paypalTransactionId])
     @@index([stripePaymentIntentId])
 }
 

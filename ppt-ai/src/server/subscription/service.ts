@@ -161,7 +161,7 @@ export async function incrementUsage(
       feature,
       amount,
       period: currentPeriod,
-      metadata: metadata ?? {},
+      metadata: (metadata ?? {}) as Record<string, string | number | boolean>,
     },
   });
 }

@@ -1,5 +1,6 @@
 import { PresentationGenerationManager } from "@/components/presentation/dashboard/PresentationGenerationManager";
 import PresentationHeader from "@/components/presentation/presentation-page/PresentationHeader";
+import { SubscriptionGate } from "@/components/subscription/SubscriptionGate";
 import type React from "react";
 
 export default function PresentationLayout({
@@ -8,7 +9,7 @@ export default function PresentationLayout({
   children: React.ReactNode;
 }) {
   return (
-    <>
+    <SubscriptionGate requireSubscription={true}>
       <PresentationGenerationManager />
       <div className="flex h-screen w-screen flex-col supports-[(height:100dvh)]:h-[100dvh]">
         <PresentationHeader />
@@ -18,6 +19,6 @@ export default function PresentationLayout({
           </div>
         </main>
       </div>
-    </>
+    </SubscriptionGate>
   );
 }
