@@ -3,10 +3,12 @@ import TanStackQueryProvider from "@/provider/TanstackProvider";
 import { ThemeProvider } from "@/provider/theme-provider";
 import "@/styles/globals.css";
 import { type Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Plus_Jakarta_Sans } from "next/font/google";
 
-// If loading a variable font, you don't need to specify the font weight
-const inter = Inter({ subsets: ["latin"] });
+const fontSans = Plus_Jakarta_Sans({
+  subsets: ["latin"],
+  variable: "--font-sans",
+});
 
 export const metadata: Metadata = {
   title: "Create Next App",
@@ -21,8 +23,8 @@ export default async function RootLayout({
   return (
     <TanStackQueryProvider>
       <NextAuthProvider>
-        <html lang="en">
-          <body className={`${inter.className} antialiased`}>
+        <html lang="en" suppressHydrationWarning>
+          <body className={`${fontSans.variable} font-sans antialiased`}>
             <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
               {children}
             </ThemeProvider>

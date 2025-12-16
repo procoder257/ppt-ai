@@ -18,15 +18,10 @@ export async function middleware(request: NextRequest) {
     isApiRoute
   });
 
-  // Root path handling
+  // Root path handling - ALLOW ALL
   if (pathname === "/") {
-    if (session) {
-      console.log("[Middleware] Root (Authenticated) → /pricing");
-      return NextResponse.redirect(new URL("/pricing", request.url));
-    } else {
-      console.log("[Middleware] Root (Unauthenticated) → /auth/signin");
-      return NextResponse.redirect(new URL("/auth/signin", request.url));
-    }
+    console.log("[Middleware] Root path accessed - showing landing page");
+    return NextResponse.next();
   }
 
   // If user is not authenticated and trying to access a protected route, redirect to sign-in
@@ -58,8 +53,9 @@ export async function middleware(request: NextRequest) {
 
   // If user is on auth page but already signed in, redirect to pricing (subscription check happens there)
   if (isAuthPage && session) {
-    console.log("[Middleware] Already signed in on auth page → /pricing");
-    return NextResponse.redirect(new URL("/pricing", request.url));
+    console.log("[Middleware] Already signed in on auth page → /pricing or /presentation");
+    const target = session.user?.hasAccess ? "/presentation" : "/pricing";
+    return NextResponse.redirect(new URL(target, request.url));
   }
 
   console.log("[Middleware] Allowing request to continue");
@@ -68,5 +64,5 @@ export async function middleware(request: NextRequest) {
 
 // Add routes that should be protected by authentication
 export const config = {
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
+  matcher: ["/((?!api|_next/static|_next/image|favicon.ico|testimonials|auth-visuals|terms|privacy).*)"],
 };

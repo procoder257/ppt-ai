@@ -54,11 +54,11 @@ export function UserDetail() {
       )}
       {(session.status === "loading" ||
         session.status === "unauthenticated") && (
-        <div className="grid gap-0.5 px-2 py-1.5">
-          <Skeleton className="h-4 w-full" />
-          <Skeleton className="h-2 w-full" />
-        </div>
-      )}
+          <div className="grid gap-0.5 px-2 py-1.5">
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-2 w-full" />
+          </div>
+        )}
     </div>
   );
 }
@@ -105,7 +105,7 @@ export default function SideBarDropdown({
           <DropdownMenuItem asChild>
             <Button variant="outline" className="w-full">
               <Link
-                href="/pricing"
+                href="/subscription"
                 className="flex h-full w-full items-center justify-center p-2"
               >
                 <CreditCard className="mr-2 h-4 w-4" />

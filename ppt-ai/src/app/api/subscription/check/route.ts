@@ -17,6 +17,13 @@ export async function GET() {
         trialEndsAt: true,
         currentPeriodEnd: true,
         paypalSubscriptionId: true,
+        billingCycle: true,
+        plan: {
+          select: {
+            displayName: true,
+            name: true,
+          },
+        },
       },
     });
 
@@ -31,11 +38,13 @@ export async function GET() {
       hasActiveSubscription,
       subscription: subscription
         ? {
-            status: subscription.status,
-            trialEndsAt: subscription.trialEndsAt,
-            currentPeriodEnd: subscription.currentPeriodEnd,
-            paypalSubscriptionId: subscription.paypalSubscriptionId,
-          }
+          status: subscription.status,
+          trialEndsAt: subscription.trialEndsAt,
+          currentPeriodEnd: subscription.currentPeriodEnd,
+          paypalSubscriptionId: subscription.paypalSubscriptionId,
+          billingCycle: subscription.billingCycle,
+          plan: subscription.plan,
+        }
         : null,
     });
   } catch (error) {
