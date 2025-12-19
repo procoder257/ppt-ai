@@ -12,6 +12,7 @@ interface AuthLayoutProps {
     mode: "signin" | "signup";
     heading: string;
     subheading: string;
+    callbackUrl?: string;
 }
 
 const slides = [
@@ -23,10 +24,13 @@ const slides = [
     "/auth-visuals/slide3.png"
 ];
 
-export function AuthLayout({ mode, heading, subheading }: AuthLayoutProps) {
+export function AuthLayout({ mode, heading, subheading, callbackUrl: propCallbackUrl }: AuthLayoutProps) {
     const searchParams = useSearchParams();
-    const callbackUrl = searchParams.get("callbackUrl") ?? "/";
+    const queryCallbackUrl = searchParams.get("callbackUrl");
     const error = searchParams.get("error");
+
+    // Priority: Prop > Query Param > Default "/"
+    const callbackUrl = propCallbackUrl ?? queryCallbackUrl ?? "/";
 
     const handleSignIn = async (provider: string) => {
         await signIn(provider, { callbackUrl });

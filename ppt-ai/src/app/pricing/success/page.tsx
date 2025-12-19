@@ -80,6 +80,15 @@ function SuccessPageContent() {
     activateSubscription();
   }, [subscriptionId, token, session, sessionStatus]);
 
+  useEffect(() => {
+    if (status === "success") {
+      const timer = setTimeout(() => {
+        router.push("/presentation");
+      }, 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [status, router]);
+
   if (status === "loading" || sessionStatus === "loading") {
     return (
       <div className="container mx-auto py-12 text-center">
@@ -109,7 +118,7 @@ function SuccessPageContent() {
       <Card className="p-6 max-w-md mx-auto text-center">
         <h2 className="text-2xl font-bold mb-4">Subscription Activated!</h2>
         <p className="mb-6">
-          Your subscription has been successfully activated. You now have access to all Pro features.
+          Your subscription has been successfully activated. Redirecting you to the dashboard...
         </p>
         <Button onClick={() => router.push("/presentation")}>
           Go to Dashboard

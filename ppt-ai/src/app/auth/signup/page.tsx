@@ -8,6 +8,7 @@ export default function SignUp() {
             mode="signup"
             heading="Create an account"
             subheading="Join thousands of teams crafting beautiful presentations with AI."
+            callbackUrl="/pricing"
         />
     );
 }

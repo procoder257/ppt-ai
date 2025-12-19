@@ -57,9 +57,9 @@ export function Navbar() {
                             Login
                         </Button>
                     </Link>
-                    <Link href="/auth/signin">
+                    <Link href="/auth/signup">
                         <Button size="default" className="bg-primary hover:bg-primary/90 text-white font-semibold shadow-lg shadow-primary/30 rounded-lg px-6">
-                            Try for Free
+                            Signup
                         </Button>
                     </Link>
                 </div>

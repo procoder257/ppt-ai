@@ -8,6 +8,7 @@ export default function SignIn() {
       mode="signin"
       heading="Welcome back"
       subheading="Sign in to your account to continue creating stunning presentations."
+      callbackUrl="/presentation"
     />
   );
 }
