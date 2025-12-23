@@ -33,16 +33,93 @@ async function main() {
   });
   console.log("✅ Free plan created/updated");
 
+  // Create Starter Plan
+  await prisma.subscriptionPlan.upsert({
+    where: { name: "STARTER" },
+    update: {
+      displayName: "Starter",
+      description: "For individuals",
+      priceMonthly: 25,
+      priceYearly: 240,
+      paypalPlanIdMonthly: "P-6YS76998ST9320021NFDGAHA",
+      paypalPlanIdYearly: "P-0HC52330X35574305NFDGAHQ",
+      features: {
+        presentationsPerMonth: 10,
+        canExportPPTX: true,
+        canUseCustomThemes: false,
+        canUsePremiumImages: false,
+        maxSlidesPerPresentation: 30,
+        supportLevel: "email",
+        advancedAIModels: false,
+      },
+      limits: {
+        presentations_created: 10,
+        api_calls: 100,
+        images_generated: 50,
+        storage_mb: 500,
+      },
+    },
+    create: {
+      name: "STARTER",
+      displayName: "Starter",
+      description: "For individuals",
+      priceMonthly: 25,
+      priceYearly: 240,
+      paypalPlanIdMonthly: "P-6YS76998ST9320021NFDGAHA",
+      paypalPlanIdYearly: "P-0HC52330X35574305NFDGAHQ",
+      features: {
+        presentationsPerMonth: 10,
+        canExportPPTX: true,
+        canUseCustomThemes: false,
+        canUsePremiumImages: false,
+        maxSlidesPerPresentation: 30,
+        supportLevel: "email",
+        advancedAIModels: false,
+      },
+      limits: {
+        presentations_created: 10,
+        api_calls: 100,
+        images_generated: 50,
+        storage_mb: 500,
+      },
+    },
+  });
+  console.log("✅ Starter plan created/updated");
+
   // Create Pro Plan
   await prisma.subscriptionPlan.upsert({
     where: { name: "PRO" },
-    update: {},
+    update: {
+      displayName: "Pro",
+      description: "For professionals and teams",
+      priceMonthly: 35,
+      priceYearly: 360,
+      paypalPlanIdMonthly: "P-8YW803282F1123848NFDGAHY",
+      paypalPlanIdYearly: "P-70F84556CF534361XNFDGAIA",
+      features: {
+        presentationsPerMonth: -1,
+        canExportPPTX: true,
+        canUseCustomThemes: true,
+        canUsePremiumImages: true,
+        maxSlidesPerPresentation: -1,
+        supportLevel: "priority",
+        advancedAIModels: true,
+      },
+      limits: {
+        presentations_created: -1,
+        api_calls: -1,
+        images_generated: -1,
+        storage_mb: 1000,
+      },
+    },
     create: {
       name: "PRO",
       displayName: "Pro",
       description: "For professionals and teams",
-      priceMonthly: 19,
-      priceYearly: 190,
+      priceMonthly: 35,
+      priceYearly: 360,
+      paypalPlanIdMonthly: "P-8YW803282F1123848NFDGAHY",
+      paypalPlanIdYearly: "P-70F84556CF534361XNFDGAIA",
       features: {
         presentationsPerMonth: -1,
         canExportPPTX: true,

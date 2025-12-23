@@ -48,6 +48,7 @@ enum SubscriptionStatus {
 
 enum SubscriptionPlanName {
     FREE
+    STARTER
     PRO
     ENTERPRISE
 }

@@ -109,7 +109,7 @@ export function Hero() {
                     >
                         <Link href="/auth/signin">
                             <Button size="lg" className="h-14 px-10 text-lg bg-primary hover:bg-primary/90 text-white shadow-xl shadow-primary/20 rounded-xl font-bold transition-transform hover:scale-105">
-                                Try for Free
+                                Try now
                             </Button>
                         </Link>
                         <span className="text-sm font-handwriting transform -rotate-6 text-muted-foreground mt-8 ml-2 hidden sm:block">

@@ -148,12 +148,12 @@ export function PresentationGenerationManager() {
                   usePresentationState.getState().slides.map((s) =>
                     s.id === slideId
                       ? {
-                          ...s,
-                          rootImage: {
-                            query: rootImage.query,
-                            url: result.image.url,
-                          },
-                        }
+                        ...s,
+                        rootImage: {
+                          query: rootImage.query,
+                          url: result.image.url,
+                        },
+                      }
                       : s,
                   ),
                 );
@@ -426,7 +426,46 @@ export function PresentationGenerationManager() {
   const { completion: presentationCompletion, complete: generatePresentation } =
     useCompletion({
       api: "/api/presentation/generate",
-      onFinish: (_prompt, _completion) => {
+      onFinish: async (_prompt, completion) => {
+        // Parse the final content one last time to be sure
+        const thinkingExtract = extractThinking(completion);
+        if (thinkingExtract.hasThinking) {
+          setPresentationThinking(thinkingExtract.thinking);
+        }
+        const finalContent = thinkingExtract.hasThinking
+          ? thinkingExtract.content
+          : completion;
+        const processed = stripXmlCodeBlock(finalContent);
+
+        streamingParserRef.current.reset();
+        streamingParserRef.current.parseChunk(processed);
+        streamingParserRef.current.finalize();
+        const finalSlides = streamingParserRef.current.getAllSlides();
+
+        // Update local state one last time
+        setSlides(finalSlides);
+
+        // Cancel any pending RAF since we are finalizing manually
+        if (slidesRafIdRef.current !== null) {
+          cancelAnimationFrame(slidesRafIdRef.current);
+          slidesRafIdRef.current = null;
+        }
+
+        // Save to Database
+        const { currentPresentationId } = usePresentationState.getState();
+        if (currentPresentationId) {
+          try {
+            await updatePresentation({
+              id: currentPresentationId,
+              content: { slides: finalSlides, config: {} },
+            });
+            console.log("Presentation saved to DB successfully on finish.");
+          } catch (error) {
+            console.error("Failed to save presentation to DB:", error);
+            toast.error("Failed to save generated presentation.");
+          }
+        }
+
         setIsGeneratingPresentation(false);
         setShouldStartPresentationGeneration(false);
       },
@@ -531,12 +570,12 @@ export function PresentationGenerationManager() {
                   slides.map((s) =>
                     s.id === slideId
                       ? {
-                          ...s,
-                          rootImage: {
-                            ...s.rootImage!,
-                            url: result.image.url,
-                          },
-                        }
+                        ...s,
+                        rootImage: {
+                          ...s.rootImage!,
+                          url: result.image.url,
+                        },
+                      }
                       : s,
                   ),
                 );

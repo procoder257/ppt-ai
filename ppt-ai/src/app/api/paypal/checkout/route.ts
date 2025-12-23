@@ -19,17 +19,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { planId, billingCycle } = await request.json();
+    const { planName, billingCycle } = await request.json();
 
-    if (!planId || !billingCycle) {
+    if (!planName || !billingCycle) {
       return NextResponse.json(
-        { error: "Plan ID and billing cycle are required" },
+        { error: "Plan Name and billing cycle are required" },
         { status: 400 },
       );
     }
 
     const plan = await db.subscriptionPlan.findUnique({
-      where: { id: planId },
+      where: { name: planName },
     });
 
     if (!plan) {

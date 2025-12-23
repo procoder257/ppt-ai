@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -9,26 +9,39 @@ import { SubscriptionGate } from "@/components/subscription/SubscriptionGate";
 import { Check, Sparkles } from "lucide-react";
 import { motion } from "framer-motion";
 
+import { ContactSalesModal } from "@/components/pricing/ContactSalesModal";
+
 function PricingContent() {
   const { data: session } = useSession();
   const router = useRouter();
   const [billingCycle, setBillingCycle] = useState<"MONTHLY" | "YEARLY">("YEARLY");
   const [loading, setLoading] = useState<string | null>(null);
+  const [contactModalOpen, setContactModalOpen] = useState(false);
+  const [subscription, setSubscription] = useState<any>(null);
 
-  const handleSubscribe = async (planId: string) => {
+  useEffect(() => {
+    if (session?.user) {
+      fetch("/api/subscription/check")
+        .then((res) => res.json())
+        .then((data) => setSubscription(data))
+        .catch((err) => console.error("Failed to check subscription:", err));
+    }
+  }, [session]);
+
+  const handleSubscribe = async (planName: "STARTER" | "PRO") => {
     if (!session) {
       router.push("/api/auth/signin");
       return;
     }
 
-    setLoading(planId);
+    setLoading(planName);
 
     try {
       const response = await fetch("/api/paypal/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          planId,
+          planName,
           billingCycle,
         }),
       });
@@ -52,8 +65,16 @@ function PricingContent() {
     }
   };
 
+  const isStarter = subscription?.subscription?.plan?.name === "STARTER" && subscription.hasActiveSubscription;
+  const isPro = subscription?.subscription?.plan?.name === "PRO" && subscription.hasActiveSubscription;
+
+  const starterPlanId = billingCycle === "MONTHLY"
+    ? "P-6YS76998ST9320021NFDGAHA"
+    : "P-0HC52330X35574305NFDGAHQ";
+
   return (
     <div className="min-h-screen bg-background text-foreground py-20">
+      <ContactSalesModal open={contactModalOpen} onOpenChange={setContactModalOpen} />
       <div className="container mx-auto px-4 max-w-6xl">
         {/* Header */}
         <div className="text-center mb-16 space-y-4">
@@ -107,7 +128,7 @@ function PricingContent() {
         {/* Pricing Cards */}
         <div className="grid md:grid-cols-3 gap-8">
           {/* STARTER */}
-          <Card className="p-8 border-transparent shadow-lg hover:shadow-xl transition-shadow relative overflow-hidden group">
+          <Card className={`p-8 border-transparent shadow-lg hover:shadow-xl transition-shadow relative overflow-hidden group ${isStarter ? "ring-2 ring-primary" : ""}`}>
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-400 to-purple-400 opacity-50"></div>
             <div className="flex items-center gap-2 mb-4">
               <Sparkles className="w-5 h-5 text-foreground" />
@@ -115,11 +136,12 @@ function PricingContent() {
             </div>
 
             <div className="mb-6">
-              <span className="text-4xl font-bold">$0</span>
+              <span className="text-4xl font-bold">${billingCycle === "MONTHLY" ? "25" : "20"}</span>
+              {billingCycle === "YEARLY" && <span className="text-lg text-muted-foreground font-medium">/mo</span>}
             </div>
 
             <div className="mb-8 p-3 bg-green-100 rounded-lg text-green-700 text-sm font-medium text-center">
-              Save 100% for a limited time
+              {billingCycle === "MONTHLY" ? "Flexible monthly plan" : "Billed $240 yearly"}
             </div>
 
             <p className="text-sm text-muted-foreground mb-6 font-medium">For any number of users</p>
@@ -140,13 +162,17 @@ function PricingContent() {
               ))}
             </ul>
 
-            <Button className="w-full bg-primary/10 hover:bg-primary/20 text-primary font-bold shadow-none">
-              Current Plan
+            <Button
+              onClick={() => !isStarter && handleSubscribe("STARTER")}
+              disabled={isStarter || loading === "STARTER"}
+              className={`w-full font-bold shadow-none ${isStarter ? "bg-primary/20 text-primary cursor-default" : "bg-primary/10 hover:bg-primary/20 text-primary"}`}
+            >
+              {isStarter ? "Current Plan" : (loading === "STARTER" ? "Processing..." : "Get Started")}
             </Button>
           </Card>
 
           {/* PRO */}
-          <Card className="p-8 border-primary shadow-2xl relative overflow-hidden transform md:-translate-y-4">
+          <Card className={`p-8 border-primary shadow-2xl relative overflow-hidden transform md:-translate-y-4 ${isPro ? "ring-4 ring-primary ring-offset-2" : ""}`}>
             <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-blue-600 to-purple-600"></div>
             <div className="flex items-center gap-2 mb-4">
               <Sparkles className="w-5 h-5 text-primary fill-primary" />
@@ -154,12 +180,12 @@ function PricingContent() {
             </div>
 
             <div className="mb-6 flex items-baseline gap-2">
-              <span className="text-2xl text-muted-foreground line-through decoration-red-500/50">$600</span>
-              <span className="text-4xl font-bold">${billingCycle === "MONTHLY" ? "19" : "198"}</span>
+              <span className="text-4xl font-bold">${billingCycle === "MONTHLY" ? "35" : "30"}</span>
+              {billingCycle === "YEARLY" && <span className="text-lg text-muted-foreground font-medium">/mo</span>}
             </div>
 
             <div className="mb-8 p-3 bg-green-100 rounded-lg text-green-700 text-sm font-medium text-center">
-              {billingCycle === "MONTHLY" ? "Most popular choice" : "Save 67% for a limited time"}
+              {billingCycle === "MONTHLY" ? "Most popular choice" : "Billed $360 yearly"}
             </div>
 
             <p className="text-sm text-muted-foreground mb-6 font-medium">
@@ -184,11 +210,11 @@ function PricingContent() {
             </ul>
 
             <Button
-              onClick={() => handleSubscribe("cmj6vtrwg0001it0ufmgdsz4w")}
-              disabled={loading === "cmj6vtrwg0001it0ufmgdsz4w"}
+              onClick={() => !isPro && handleSubscribe("PRO")}
+              disabled={isPro || loading === "PRO"}
               className="w-full bg-primary hover:bg-primary/90 text-white font-bold h-12 shadow-lg shadow-primary/25"
             >
-              {loading === "cmj6vtrwg0001it0ufmgdsz4w" ? "Processing..." : "Upgrade to Pro"}
+              {isPro ? "Current Plan" : (loading === "PRO" ? "Processing..." : "Upgrade to Pro")}
             </Button>
           </Card>
 
@@ -227,7 +253,7 @@ function PricingContent() {
               ))}
             </ul>
 
-            <Button variant="outline" className="w-full font-bold border-2 hover:bg-muted">
+            <Button onClick={() => setContactModalOpen(true)} variant="outline" className="w-full font-bold border-2 hover:bg-muted">
               Contact Sales
             </Button>
           </Card>
@@ -239,7 +265,7 @@ function PricingContent() {
           <p className="text-muted-foreground mb-8 text-lg">
             Have a larger team with specific needs? We&apos;re here to listen. Let&apos;s get on a call and see what we can do.
           </p>
-          <Button size="lg" className="px-8 font-bold bg-primary hover:bg-primary/90">
+          <Button onClick={() => setContactModalOpen(true)} size="lg" className="px-8 font-bold bg-primary hover:bg-primary/90">
             Contact Us
           </Button>
         </div>
@@ -250,8 +276,7 @@ function PricingContent() {
 
 export default function PricingPage() {
   return (
-    <SubscriptionGate requireSubscription={false}>
-      <PricingContent />
-    </SubscriptionGate>
+    <PricingContent />
   );
 }
+
