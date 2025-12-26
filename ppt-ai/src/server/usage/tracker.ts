@@ -1,4 +1,4 @@
-import { db } from "@/server/db";
+
 
 export type UsageFeature =
     | "OPENAI_GPT4"
@@ -19,32 +19,8 @@ export const UsageTracker = {
         metadata?: Record<string, any>
     ) {
         try {
-            // 1. Create detailed log entry
-            await db.usageLog.create({
-                data: {
-                    userId,
-                    feature,
-                    tokens: amount,
-                    metadata: metadata || {},
-                },
-            });
-
-            // 2. Update aggregate totals
-            const isStorage = feature === "STORAGE_UPLOAD";
-
-            await db.userUsage.upsert({
-                where: { userId },
-                create: {
-                    userId,
-                    totalTokens: isStorage ? 0 : amount,
-                    totalStorage: isStorage ? amount : 0,
-                },
-                update: {
-                    totalTokens: isStorage ? undefined : { increment: amount },
-                    totalStorage: isStorage ? { increment: amount } : undefined,
-                },
-            });
-
+            const { incrementUsage } = await import("@/server/subscription/service");
+            await incrementUsage(userId, feature, amount, metadata);
             console.log(`[UsageTracker] Tracked ${amount} for ${feature} (User: ${userId})`);
         } catch (error) {
             console.error("[UsageTracker] Failed to track usage:", error);
@@ -56,13 +32,26 @@ export const UsageTracker = {
      * Get current usage stats for a user.
      */
     async getUserUsage(userId: string) {
-        const usage = await db.userUsage.findUnique({
-            where: { userId },
-        });
+        // Map unification:
+        // totalTokens ~= sum of AI feature usage
+        // totalStorage ~= STORAGE_UPLOAD usage
+
+        const { getUsageForFeature } = await import("@/server/subscription/service");
+
+        // Sum up known token-consuming features
+        const aiFeatures = ["OPENAI_GPT4", "OPENAI_GPT35", "STABILITY_SDXL", "PRESENTATION_GENERATED"];
+        let totalTokens = 0;
+
+        for (const f of aiFeatures) {
+            const stats = await getUsageForFeature(userId, f);
+            totalTokens += stats.used;
+        }
+
+        const storageStats = await getUsageForFeature(userId, "STORAGE_UPLOAD");
 
         return {
-            totalTokens: usage?.totalTokens ? Number(usage.totalTokens) : 0,
-            totalStorage: usage?.totalStorage ? Number(usage.totalStorage) : 0,
+            totalTokens,
+            totalStorage: storageStats.used,
         };
     }
 };

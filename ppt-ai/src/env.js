@@ -30,6 +30,12 @@ export const env = createEnv({
     PAYPAL_MODE: z.enum(["sandbox", "live"]).default("sandbox"),
     ADMIN_EMAILS: z.string().optional(),
     RESEND_API_KEY: z.string().optional(),
+    SENTRY_DSN: z.string().url().optional(),
+  },
+
+  client: {
+    NEXT_PUBLIC_POSTHOG_KEY: z.string().optional(),
+    NEXT_PUBLIC_POSTHOG_HOST: z.string().optional(),
   },
 
   runtimeEnv: {
@@ -49,6 +55,9 @@ export const env = createEnv({
     PAYPAL_MODE: process.env.PAYPAL_MODE,
     ADMIN_EMAILS: process.env.ADMIN_EMAILS,
     RESEND_API_KEY: process.env.RESEND_API_KEY,
+    SENTRY_DSN: process.env.SENTRY_DSN,
+    NEXT_PUBLIC_POSTHOG_KEY: process.env.NEXT_PUBLIC_POSTHOG_KEY,
+    NEXT_PUBLIC_POSTHOG_HOST: process.env.NEXT_PUBLIC_POSTHOG_HOST,
   },
 
   skipValidation: !!process.env.SKIP_ENV_VALIDATION,

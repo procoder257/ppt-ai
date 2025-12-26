@@ -1,10 +1,15 @@
 import { db } from "@/server/db";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, CreditCard, DollarSign, Activity } from "lucide-react";
+import { RevenueChart } from "@/components/admin/RevenueChart";
+import { UsageChart } from "@/components/admin/UsageChart";
 
 export default async function AdminDashboard() {
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
     // Fetch stats in parallel
-    const [userCount, activeSubs, recentUsers, usageStats] = await Promise.all([
+    const [userCount, activeSubs, recentUsers, usageStats, recentPayments, recentUsage] = await Promise.all([
         db.user.count(),
         db.subscription.findMany({
             where: { status: "ACTIVE" },
@@ -24,7 +29,22 @@ export default async function AdminDashboard() {
                     amount: "desc",
                 },
             },
-            take: 10, // Top 10 users by usage
+            take: 10,
+        }),
+        // Fetch last 30 days of payments for chart
+        db.payment.findMany({
+            where: {
+                status: "SUCCEEDED",
+                createdAt: { gte: thirtyDaysAgo },
+            },
+            orderBy: { createdAt: "asc" },
+        }),
+        // Fetch last 30 days of usage for chart
+        db.usage.findMany({
+            where: {
+                createdAt: { gte: thirtyDaysAgo },
+            },
+            orderBy: { createdAt: "asc" },
         }),
     ]);
 
@@ -49,10 +69,55 @@ export default async function AdminDashboard() {
 
     // Calculate MRR (Monthly Recurring Revenue)
     const mrr = activeSubs.reduce((total, sub) => {
-        // Assuming monthly price if not specified. Ideally we check billing cycle.
-        // For now, use the plan's monthly price.
         return total + (sub.plan?.priceMonthly || 0);
     }, 0);
+
+    // Aggregate Revenue Data
+    const revenueMap = new Map<string, number>();
+    recentPayments.forEach(p => {
+        const date = p.createdAt.toISOString().split('T')[0] ?? "";
+        if (date) {
+            revenueMap.set(date, (revenueMap.get(date) || 0) + p.amount);
+        }
+    });
+
+    const revenueData = Array.from({ length: 30 }, (_, i) => {
+        const d = new Date();
+        d.setDate(d.getDate() - (29 - i));
+        const dateStr = d.toISOString().split('T')[0] ?? "";
+        return {
+            rawDate: d,
+            date: dateStr.split('-').slice(1).join('/'), // MM/DD
+            revenue: revenueMap.get(dateStr) || 0,
+        };
+    });
+
+    // Aggregate Usage Data
+    const usageMap = new Map<string, { tokens: number; requests: number }>();
+    recentUsage.forEach(u => {
+        const date = u.createdAt.toISOString().split('T')[0] ?? "";
+        if (date) {
+            const current = usageMap.get(date) || { tokens: 0, requests: 0 };
+            // Assuming 'amount' is tokens roughly speaking.
+            usageMap.set(date, {
+                tokens: current.tokens + u.amount,
+                requests: current.requests + 1,
+            });
+        }
+    });
+
+    const usageChartData = Array.from({ length: 30 }, (_, i) => {
+        const d = new Date();
+        d.setDate(d.getDate() - (29 - i));
+        const dateStr = d.toISOString().split('T')[0] ?? "";
+        const stats = usageMap.get(dateStr) || { tokens: 0, requests: 0 };
+        return {
+            rawDate: d,
+            date: dateStr.split('-').slice(1).join('/'),
+            tokens: stats.tokens,
+            requests: stats.requests,
+        };
+    });
 
     return (
         <div className="space-y-8">
@@ -116,7 +181,43 @@ export default async function AdminDashboard() {
             </div>
 
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-                <Card className="col-span-4">
+                <RevenueChart data={revenueData} />
+
+                <div className="col-span-3 grid gap-4">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Top AI Usage</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="space-y-4">
+                                {usageStats.map((stat, i) => {
+                                    const user = userMap.get(stat.userId);
+                                    return (
+                                        <div key={stat.userId} className="flex items-center">
+                                            <div className="w-8 font-bold text-gray-500">#{i + 1}</div>
+                                            <div className="ml-2 space-y-1">
+                                                <p className="text-sm font-medium leading-none">{user?.name || "Unknown"}</p>
+                                                <p className="text-sm text-muted-foreground">{user?.email || "No email"}</p>
+                                            </div>
+                                            <div className="ml-auto font-medium">
+                                                {stat._sum.amount?.toLocaleString() || 0} tokens
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                                {usageStats.length === 0 && (
+                                    <p className="text-sm text-muted-foreground">No usage data found.</p>
+                                )}
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
+
+                <UsageChart data={usageChartData} />
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+                <Card className="col-span-7">
                     <CardHeader>
                         <CardTitle>Recent Users</CardTitle>
                     </CardHeader>
@@ -135,34 +236,6 @@ export default async function AdminDashboard() {
                             ))}
                             {recentUsers.length === 0 && (
                                 <p className="text-sm text-muted-foreground">No users found.</p>
-                            )}
-                        </div>
-                    </CardContent>
-                </Card>
-
-                <Card className="col-span-3">
-                    <CardHeader>
-                        <CardTitle>Top AI Usage</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="space-y-4">
-                            {usageStats.map((stat, i) => {
-                                const user = userMap.get(stat.userId);
-                                return (
-                                    <div key={stat.userId} className="flex items-center">
-                                        <div className="w-8 font-bold text-gray-500">#{i + 1}</div>
-                                        <div className="ml-2 space-y-1">
-                                            <p className="text-sm font-medium leading-none">{user?.name || "Unknown"}</p>
-                                            <p className="text-sm text-muted-foreground">{user?.email || "No email"}</p>
-                                        </div>
-                                        <div className="ml-auto font-medium">
-                                            {stat._sum.amount?.toLocaleString() || 0} tokens
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                            {usageStats.length === 0 && (
-                                <p className="text-sm text-muted-foreground">No usage data found.</p>
                             )}
                         </div>
                     </CardContent>

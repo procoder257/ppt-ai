@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/card";
 import { Loader2, ArrowLeft } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { UsageSection } from "@/components/usage/UsageSection";
 
 export default function SubscriptionPage() {
     const { data: session, status } = useSession();
@@ -127,6 +128,10 @@ export default function SubscriptionPage() {
                     )}
                 </CardFooter>
             </Card>
+
+            <div className="mt-8">
+                <UsageSection />
+            </div>
         </div>
     );
 }
