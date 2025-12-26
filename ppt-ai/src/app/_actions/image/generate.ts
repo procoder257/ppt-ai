@@ -92,6 +92,37 @@ export async function generateImageAction(
       },
     });
 
+    // Langfuse Tracking
+    if (session.user?.id) {
+      try {
+        const { langfuse, flushLangfuse } = await import("@/lib/langfuse");
+        if (langfuse) {
+          const trace = langfuse.trace({
+            name: "image-generation",
+            userId: session.user.id,
+            metadata: {
+              source: "together-ai",
+              model: model
+            }
+          });
+
+          trace.generation({
+            name: "flux-generation",
+            model: model,
+            input: prompt,
+            output: permanentUrl,
+            metadata: {
+              provider: "together-ai",
+              uploadUrl: permanentUrl
+            }
+          });
+          await flushLangfuse();
+        }
+      } catch (e) {
+        console.error("Langfuse tracking error:", e);
+      }
+    }
+
     return {
       success: true,
       image: generatedImage,

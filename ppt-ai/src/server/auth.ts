@@ -4,6 +4,7 @@ import { PrismaAdapter } from "@auth/prisma-adapter";
 import NextAuth, { type DefaultSession, type Session } from "next-auth";
 import { type Adapter } from "next-auth/adapters";
 import GoogleProvider from "next-auth/providers/google";
+import CredentialsProvider from "next-auth/providers/credentials";
 declare module "next-auth" {
   interface Session extends DefaultSession {
     user: {
@@ -85,16 +86,66 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
           user.role = "USER";
         }
       }
-
       return true;
     },
   },
-
+  events: {
+    async createUser({ user }) {
+      if (user.email) {
+        // Import dynamically to avoid circular deps if any, though unlikely here
+        const { EmailService } = await import("./email/service");
+        await EmailService.sendWelcomeEmail(user.email, user.name ?? "there");
+      }
+    }
+  },
   adapter: PrismaAdapter(db) as Adapter,
   providers: [
     GoogleProvider({
       clientId: env.GOOGLE_CLIENT_ID,
       clientSecret: env.GOOGLE_CLIENT_SECRET,
     }),
+    CredentialsProvider({
+      name: "Admin Login",
+      credentials: {
+        email: { label: "Email", type: "email" },
+        password: { label: "Password", type: "password" }
+      },
+      async authorize(credentials) {
+        const adminEmails = process.env.ADMIN_EMAILS?.split(",").map(e => e.trim()) || [];
+        const adminPassword = process.env.ADMIN_PASSWORD || "admin123";
+
+        if (!credentials?.email || !credentials?.password) return null;
+
+        if (adminEmails.includes(credentials.email as string) && credentials.password === adminPassword) {
+          // Return a user object that mimics the DB user structure
+          // We fetch the user from DB to get their ID if they exist, otherwise we might have issues with the adapter
+          const user = await db.user.findUnique({
+            where: { email: credentials.email as string }
+          });
+
+          if (user) {
+            return {
+              id: user.id,
+              name: user.name,
+              email: user.email,
+              image: user.image,
+              role: "ADMIN", // Force admin role for this session
+              hasAccess: true
+            };
+          } else {
+            // If user doesn't exist in DB, we create a temporary session user
+            // Ideally admin should exist in DB, but for this login flow we can return a mock
+            return {
+              id: "admin-temp-id",
+              name: "Admin User",
+              email: credentials.email as string,
+              role: "ADMIN",
+              hasAccess: true
+            };
+          }
+        }
+        return null;
+      }
+    })
   ],
 });

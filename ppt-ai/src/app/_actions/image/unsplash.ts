@@ -73,7 +73,38 @@ export async function getImageFromUnsplash(
       return { success: false, error: "No images found for this query" };
     }
 
+
     // Return the image URL directly without storing in database
+
+    // Langfuse Tracking
+    if (session.user?.id) {
+      try {
+        const { langfuse, flushLangfuse } = await import("@/lib/langfuse");
+        if (langfuse) {
+          const trace = langfuse.trace({
+            name: "image-search-unsplash",
+            userId: session.user.id,
+            metadata: {
+              source: "unsplash"
+            }
+          });
+
+          trace.generation({
+            name: "unsplash-search",
+            model: "unsplash-search",
+            input: query,
+            output: firstImage.urls.regular,
+            metadata: {
+              layout: layoutType,
+            }
+          });
+          await flushLangfuse();
+        }
+      } catch (e) {
+        console.error("Langfuse tracking error:", e);
+      }
+    }
+
     return {
       success: true,
       imageUrl: firstImage.urls.regular,

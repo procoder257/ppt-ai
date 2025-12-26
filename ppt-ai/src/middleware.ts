@@ -25,7 +25,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // If user is not authenticated and trying to access a protected route, redirect to sign-in
-  if (!session && !isAuthPage && !isPricingPage && !isApiRoute) {
+  if (!session && !isAuthPage && !isPricingPage && !isApiRoute && !isAdminPage) {
     console.log("[Middleware] No session on protected route → /auth/signin");
     return NextResponse.redirect(
       new URL(
@@ -35,15 +35,20 @@ export async function middleware(request: NextRequest) {
     );
   }
 
-  // Admin route protection
-  if (isAdminPage) {
+  if (isAdminPage && !pathname.includes("/admin/login")) {
     if (!session) {
-      console.log("[Middleware] Admin page (Unauthenticated) → /auth/signin");
-      return NextResponse.redirect(new URL("/auth/signin", request.url));
+      console.log("[Middleware] Admin page (Unauthenticated) → /admin/login");
+      return NextResponse.redirect(new URL("/admin/login", request.url));
     }
 
-    const adminEmails = process.env.ADMIN_EMAILS?.split(",") || [];
+    const adminEmails = process.env.ADMIN_EMAILS?.split(",").map(e => e.trim()) || [];
     const userEmail = session.user?.email;
+
+    console.log("[Middleware] Admin Check:", {
+      userEmail,
+      adminEmails,
+      envValue: process.env.ADMIN_EMAILS
+    });
 
     if (!userEmail || !adminEmails.includes(userEmail)) {
       console.log("[Middleware] Admin page (Unauthorized) → /");

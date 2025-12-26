@@ -4,7 +4,7 @@ import { Users, CreditCard, DollarSign, Activity } from "lucide-react";
 
 export default async function AdminDashboard() {
     // Fetch stats in parallel
-    const [userCount, activeSubs, recentUsers] = await Promise.all([
+    const [userCount, activeSubs, recentUsers, usageStats] = await Promise.all([
         db.user.count(),
         db.subscription.findMany({
             where: { status: "ACTIVE" },
@@ -14,7 +14,38 @@ export default async function AdminDashboard() {
             orderBy: { createdAt: "desc" },
             take: 5,
         }),
+        db.usage.groupBy({
+            by: ["userId"],
+            _sum: {
+                amount: true,
+            },
+            orderBy: {
+                _sum: {
+                    amount: "desc",
+                },
+            },
+            take: 10, // Top 10 users by usage
+        }),
     ]);
+
+    // Fetch user details for the top usage stats
+    const usageUserIds = usageStats.map((stat) => stat.userId);
+    const usageUsers = await db.user.findMany({
+        where: {
+            id: {
+                in: usageUserIds,
+            },
+        },
+        select: {
+            id: true,
+            name: true,
+            email: true,
+            image: true,
+        },
+    });
+
+    // Create a map for easy lookup
+    const userMap = new Map(usageUsers.map((u) => [u.id, u]));
 
     // Calculate MRR (Monthly Recurring Revenue)
     const mrr = activeSubs.reduce((total, sub) => {
@@ -111,10 +142,29 @@ export default async function AdminDashboard() {
 
                 <Card className="col-span-3">
                     <CardHeader>
-                        <CardTitle>Recent Sales</CardTitle>
+                        <CardTitle>Top AI Usage</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <p className="text-sm text-muted-foreground">No recent sales data available.</p>
+                        <div className="space-y-4">
+                            {usageStats.map((stat, i) => {
+                                const user = userMap.get(stat.userId);
+                                return (
+                                    <div key={stat.userId} className="flex items-center">
+                                        <div className="w-8 font-bold text-gray-500">#{i + 1}</div>
+                                        <div className="ml-2 space-y-1">
+                                            <p className="text-sm font-medium leading-none">{user?.name || "Unknown"}</p>
+                                            <p className="text-sm text-muted-foreground">{user?.email || "No email"}</p>
+                                        </div>
+                                        <div className="ml-auto font-medium">
+                                            {stat._sum.amount?.toLocaleString() || 0} tokens
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                            {usageStats.length === 0 && (
+                                <p className="text-sm text-muted-foreground">No usage data found.</p>
+                            )}
+                        </div>
                     </CardContent>
                 </Card>
             </div>

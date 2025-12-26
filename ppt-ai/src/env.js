@@ -29,6 +29,7 @@ export const env = createEnv({
     PAYPAL_WEBHOOK_ID: z.string().optional(),
     PAYPAL_MODE: z.enum(["sandbox", "live"]).default("sandbox"),
     ADMIN_EMAILS: z.string().optional(),
+    RESEND_API_KEY: z.string().optional(),
   },
 
   runtimeEnv: {
@@ -47,6 +48,7 @@ export const env = createEnv({
     PAYPAL_WEBHOOK_ID: process.env.PAYPAL_WEBHOOK_ID,
     PAYPAL_MODE: process.env.PAYPAL_MODE,
     ADMIN_EMAILS: process.env.ADMIN_EMAILS,
+    RESEND_API_KEY: process.env.RESEND_API_KEY,
   },
 
   skipValidation: !!process.env.SKIP_ENV_VALIDATION,

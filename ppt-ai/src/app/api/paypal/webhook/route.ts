@@ -63,6 +63,18 @@ export async function POST(request: NextRequest) {
                 dbSubscription.userId,
                 subscription,
               );
+
+              // Send email on activation
+              if (event.eventType === "BILLING.SUBSCRIPTION.ACTIVATED" && dbSubscription.user.email) {
+                const { EmailService } = await import("@/server/email/service");
+                const planName = dbSubscription.planId === "PRO" ? "Pro Plan" : "Enterprise Plan";
+                await EmailService.sendSubscriptionSuccess(
+                  dbSubscription.user.email,
+                  dbSubscription.user.name ?? "Customer",
+                  planName,
+                  subscription.billingInfo?.lastPayment?.amount?.value ?? "$19.00"
+                );
+              }
             }
           }
         }

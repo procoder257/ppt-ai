@@ -249,6 +249,16 @@ export async function POST(req: Request) {
       searchResults,
     } = (await req.json()) as SlidesRequest;
 
+    // Rate Limiting
+    const { checkRateLimit } = await import("@/lib/ratelimit");
+    const { success } = await checkRateLimit(session.user.id);
+    if (!success) {
+      return NextResponse.json(
+        { error: "Rate limit exceeded. Please try again later." },
+        { status: 429 }
+      );
+    }
+
     if (!title || !outline || !Array.isArray(outline) || !language) {
       return NextResponse.json(
         { error: "Missing required fields" },
@@ -308,6 +318,62 @@ export async function POST(req: Request) {
     const result = streamText({
       model,
       prompt: formattedPrompt,
+      onFinish: async ({ usage }) => {
+        console.log("DEBUG: onFinish triggered");
+        console.log("DEBUG: Usage object:", JSON.stringify(usage, null, 2));
+        console.log("DEBUG: User ID:", session.user?.id);
+
+        if (session.user?.id) {
+          try {
+            // Internal DB Tracking
+            const { trackTokenUsage } = await import("@/lib/usage");
+            await trackTokenUsage({
+              userId: session.user.id,
+              feature: "token_usage",
+              amount: usage.totalTokens,
+              model: model.modelId,
+              type: "presentation",
+              metadata: {
+                promptTokens: usage.promptTokens,
+                completionTokens: usage.completionTokens
+              }
+            });
+            console.log("DEBUG: Tracked usage successfully");
+
+            // Langfuse Tracking
+            const { langfuse, flushLangfuse } = await import("@/lib/langfuse");
+            if (langfuse) {
+              const trace = langfuse.trace({
+                name: "presentation-generation",
+                userId: session.user.id,
+                metadata: {
+                  title: title,
+                  language: language
+                }
+              });
+
+              trace.generation({
+                model: model.modelId,
+                input: formattedPrompt,
+                output: "Streamed content",
+                usage: {
+                  input: usage.promptTokens,
+                  output: usage.completionTokens,
+                  total: usage.totalTokens
+                }
+              });
+
+              await flushLangfuse();
+              console.log("DEBUG: Langfuse event sent");
+            }
+
+          } catch (err) {
+            console.error("DEBUG: Error tracking usage (Internal/Langfuse):", err);
+          }
+        } else {
+          console.log("DEBUG: No session user id found in onFinish");
+        }
+      },
     });
 
     return result.toDataStreamResponse();
