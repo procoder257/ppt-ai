@@ -5,15 +5,42 @@ import { auth } from "@/server/auth";
 import { db } from "@/server/db";
 import { type InputJsonValue } from "@prisma/client/runtime/library";
 
-export async function createPresentation({
-  content,
-  title,
-  theme = "default",
-  outline,
-  imageSource,
-  presentationStyle,
-  language,
-}: {
+import { z } from "zod";
+
+const createPresentationSchema = z.object({
+  title: z.string().min(1, "Title is required").max(200, "Title is too long"),
+  theme: z.string().optional().default("default"),
+  imageSource: z.string().optional(),
+  presentationStyle: z.string().optional(),
+  language: z.string().optional(),
+  outline: z.array(z.string()).optional(),
+  // Content validation is complex, we'll keep it as unknown/any for now but ensure it's an object
+  content: z.object({
+    slides: z.array(z.any())
+  })
+});
+
+const updatePresentationSchema = z.object({
+  id: z.string(),
+  title: z.string().max(200).optional(),
+  theme: z.string().optional(),
+  prompt: z.string().optional(),
+  imageSource: z.string().optional(),
+  presentationStyle: z.string().optional(),
+  language: z.string().optional(),
+  outline: z.array(z.string()).optional(),
+  thumbnailUrl: z.string().url().optional().or(z.literal("")),
+  content: z.object({
+    slides: z.array(z.any()),
+    config: z.record(z.unknown()).optional()
+  }).optional(),
+  searchResults: z.array(z.object({
+    query: z.string(),
+    results: z.array(z.unknown())
+  })).optional()
+});
+
+export async function createPresentation(input: {
   content: {
     slides: PlateSlide[];
   };
@@ -30,12 +57,25 @@ export async function createPresentation({
   }
   const userId = session.user.id;
 
+  const validatedFields = createPresentationSchema.safeParse(input);
+
+  if (!validatedFields.success) {
+    return {
+      success: false,
+      message: "Invalid input: " + (validatedFields.error?.issues[0]?.message || "Validation failed"),
+    };
+  }
+
+  const { title, theme, imageSource, presentationStyle, language, outline, content } = validatedFields.data;
+
+  console.log("[Presentation] Creating presentation", { title, theme, userId });
+
   try {
     const presentation = await db.baseDocument.create({
       data: {
         type: "PRESENTATION",
         documentType: "presentation",
-        title: title ?? "Untitled Presentation",
+        title: title,
         userId,
         presentation: {
           create: {
@@ -53,13 +93,15 @@ export async function createPresentation({
       },
     });
 
+    console.log("[Presentation] Created successfully", { id: presentation.id, userId });
+
     return {
       success: true,
       message: "Presentation created successfully",
       presentation,
     };
   } catch (error) {
-    console.error(error);
+    console.error("[Presentation] Creation failed", { userId, error });
     return {
       success: false,
       message: "Failed to create presentation",
@@ -82,19 +124,7 @@ export async function createEmptyPresentation(
   });
 }
 
-export async function updatePresentation({
-  id,
-  content,
-  prompt,
-  title,
-  theme,
-  outline,
-  searchResults,
-  imageSource,
-  presentationStyle,
-  language,
-  thumbnailUrl,
-}: {
+export async function updatePresentation(input: {
   id: string;
   content?: {
     slides: PlateSlide[];
@@ -115,6 +145,20 @@ export async function updatePresentation({
     throw new Error("Unauthorized");
   }
 
+  const validatedFields = updatePresentationSchema.safeParse(input);
+
+  if (!validatedFields.success) {
+    return {
+      success: false,
+      message: "Invalid input: " + (validatedFields.error?.issues[0]?.message || "Validation failed"),
+    };
+  }
+
+  const {
+    id, title, theme, prompt, outline, searchResults,
+    imageSource, presentationStyle, language, thumbnailUrl, content
+  } = validatedFields.data;
+
   try {
     // Extract values from content if provided there
     const effectiveTheme = theme;
@@ -122,9 +166,14 @@ export async function updatePresentation({
     const effectivePresentationStyle = presentationStyle;
     const effectiveLanguage = language;
 
+    console.log("[Presentation] Updating", { id, userId: session.user.id });
+
     // Update base document with all presentation data
     const presentation = await db.baseDocument.update({
-      where: { id },
+      where: {
+        id,
+        userId: session.user.id, // Ensure ownership
+      },
       data: {
         title: title,
         thumbnailUrl,
@@ -146,13 +195,15 @@ export async function updatePresentation({
       },
     });
 
+    console.log("[Presentation] Updated successfully", { id, userId: session.user.id });
+
     return {
       success: true,
       message: "Presentation updated successfully",
       presentation,
     };
   } catch (error) {
-    console.error(error);
+    console.error("[Presentation] Update failed", { id, userId: session.user.id, error });
     return {
       success: false,
       message: "Failed to update presentation",
@@ -168,7 +219,10 @@ export async function updatePresentationTitle(id: string, title: string) {
 
   try {
     const presentation = await db.baseDocument.update({
-      where: { id },
+      where: {
+        id,
+        userId: session.user.id, // Ensure ownership
+      },
       data: { title },
       include: {
         presentation: true,
@@ -200,6 +254,8 @@ export async function deletePresentations(ids: string[]) {
   }
 
   try {
+    console.log("[Presentation] Deleting presentations", { ids, userId: session.user.id });
+
     // Delete the base documents using deleteMany (this will cascade delete the presentations)
     const result = await db.baseDocument.deleteMany({
       where: {
@@ -212,6 +268,8 @@ export async function deletePresentations(ids: string[]) {
 
     const deletedCount = result.count;
     const failedCount = ids.length - deletedCount;
+
+    console.log("[Presentation] Deletion result", { deletedCount, failedCount, userId: session.user.id });
 
     if (failedCount > 0) {
       return {
@@ -232,7 +290,7 @@ export async function deletePresentations(ids: string[]) {
           : `${deletedCount} presentations deleted successfully`,
     };
   } catch (error) {
-    console.error("Failed to delete presentations:", error);
+    console.error("[Presentation] Deletion failed", { ids, error });
     return {
       success: false,
       message: "Failed to delete presentations",
@@ -254,6 +312,21 @@ export async function getPresentation(id: string) {
         presentation: true,
       },
     });
+
+    if (!presentation) {
+      return {
+        success: false,
+        message: "Presentation not found",
+      };
+    }
+
+    // Check ownership or public status
+    if (presentation.userId !== session.user.id && !presentation.isPublic) {
+      return {
+        success: false,
+        message: "Unauthorized access",
+      };
+    }
 
     return {
       success: true,
@@ -324,9 +397,21 @@ export async function updatePresentationTheme(id: string, theme: string) {
   }
 
   try {
-    const presentation = await db.presentation.update({
-      where: { id },
-      data: { theme },
+    const presentation = await db.baseDocument.update({
+      where: {
+        id,
+        userId: session.user.id // Ensure ownership
+      },
+      data: {
+        presentation: {
+          update: {
+            theme
+          }
+        }
+      },
+      include: {
+        presentation: true
+      }
     });
 
     return {
@@ -362,6 +447,14 @@ export async function duplicatePresentation(id: string, newTitle?: string) {
       return {
         success: false,
         message: "Original presentation not found",
+      };
+    }
+
+    // Check access
+    if (original.userId !== session.user.id && !original.isPublic) {
+      return {
+        success: false,
+        message: "Unauthorized access",
       };
     }
 
