@@ -2,6 +2,8 @@ import { db } from "@/server/db";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, CreditCard, DollarSign, Activity } from "lucide-react";
 
+export const dynamic = "force-dynamic";
+
 export default async function AdminDashboard() {
     // Fetch stats in parallel
     const [userCount, activeSubs, recentUsers] = await Promise.all([

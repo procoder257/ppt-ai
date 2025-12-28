@@ -15,6 +15,8 @@ import {
 } from "@/components/ui/table";
 import { format } from "date-fns";
 
+export const dynamic = "force-dynamic";
+
 export default async function AdminUsagePage() {
     // Fetch usage stats
     const usageByFeature = await db.usage.groupBy({
