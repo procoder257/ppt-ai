@@ -2,7 +2,6 @@ import { db } from "@/server/db";
 import {
     Card,
     CardContent,
-    CardDescription,
     CardHeader,
     CardTitle,
 } from "@/components/ui/card";
@@ -18,14 +17,14 @@ import { format } from "date-fns";
 
 export default async function AdminUsagePage() {
     // Fetch usage stats
-    const usageByFeature = await db.usageLog.groupBy({
+    const usageByFeature = await db.usage.groupBy({
         by: ["feature"],
         _sum: {
-            tokens: true,
+            amount: true,
         },
     });
 
-    const recentLogs = await db.usageLog.findMany({
+    const recentLogs = await db.usage.findMany({
         take: 20,
         orderBy: {
             createdAt: "desc",
@@ -54,7 +53,7 @@ export default async function AdminUsagePage() {
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl font-bold">
-                                {stat._sum.tokens?.toLocaleString() || 0}
+                                {stat._sum.amount?.toLocaleString() || 0}
                             </div>
                             <p className="text-xs text-muted-foreground">Total Units</p>
                         </CardContent>
@@ -86,7 +85,7 @@ export default async function AdminUsagePage() {
                                         </div>
                                     </TableCell>
                                     <TableCell>{log.feature}</TableCell>
-                                    <TableCell>{log.tokens.toLocaleString()}</TableCell>
+                                    <TableCell>{log.amount.toLocaleString()}</TableCell>
                                     <TableCell>
                                         {format(new Date(log.createdAt), "MMM d, HH:mm:ss")}
                                     </TableCell>

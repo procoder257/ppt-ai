@@ -1,16 +1,18 @@
 import { db } from "@/server/db";
+import { type SubscriptionPlanName } from "@prisma/client";
+import { PLAN_LIMITS } from "@/server/subscription/plans";
+import { getUserPlan } from "@/server/subscription/service";
 
 export type UsageFeature =
-    | "OPENAI_GPT4"
-    | "OPENAI_GPT35"
-    | "STABILITY_SDXL"
-    | "STORAGE_UPLOAD"
-    | "PRESENTATION_GENERATED";
+    | "presentations_created"
+    | "api_calls"
+    | "images_generated"
+    | "storage_mb";
 
 export const UsageTracker = {
     /**
      * Track a usage event for a user.
-     * Logs the individual event and updates the user's aggregate totals.
+     * Logs the individual event to the Usage table.
      */
     async trackUsage(
         userId: string,
@@ -19,50 +21,74 @@ export const UsageTracker = {
         metadata?: Record<string, any>
     ) {
         try {
-            // 1. Create detailed log entry
-            await db.usageLog.create({
-                data: {
-                    userId,
-                    feature,
-                    tokens: amount,
-                    metadata: metadata || {},
-                },
+            const currentPeriod = new Date().toISOString().slice(0, 7); // YYYY-MM
+
+            // Get user's subscription to link if exists
+            const subscription = await db.subscription.findUnique({
+                where: { userId }
             });
 
-            // 2. Update aggregate totals
-            const isStorage = feature === "STORAGE_UPLOAD";
-
-            await db.userUsage.upsert({
-                where: { userId },
-                create: {
+            await db.usage.create({
+                data: {
                     userId,
-                    totalTokens: isStorage ? 0 : amount,
-                    totalStorage: isStorage ? amount : 0,
-                },
-                update: {
-                    totalTokens: isStorage ? undefined : { increment: amount },
-                    totalStorage: isStorage ? { increment: amount } : undefined,
+                    subscriptionId: subscription?.id,
+                    feature,
+                    amount,
+                    period: currentPeriod,
+                    metadata: metadata ?? {},
                 },
             });
 
             console.log(`[UsageTracker] Tracked ${amount} for ${feature} (User: ${userId})`);
         } catch (error) {
             console.error("[UsageTracker] Failed to track usage:", error);
-            // We don't want to block the main flow if tracking fails, but we should log it.
         }
     },
 
     /**
-     * Get current usage stats for a user.
+     * Get current usage stats for a user for the current period.
      */
     async getUserUsage(userId: string) {
-        const usage = await db.userUsage.findUnique({
-            where: { userId },
+        const currentPeriod = new Date().toISOString().slice(0, 7); // YYYY-MM
+
+        // Aggregate usage for all features in current period
+        const usages = await db.usage.groupBy({
+            by: ['feature'],
+            where: {
+                userId,
+                period: currentPeriod,
+            },
+            _sum: {
+                amount: true,
+            },
+        });
+
+        // Convert to easy access map
+        const usageMap: Record<string, number> = {};
+        usages.forEach(u => {
+            usageMap[u.feature] = u._sum.amount ?? 0;
+        });
+
+        // Also get total storage (all time)
+        const storageUsage = await db.usage.aggregate({
+            where: {
+                userId,
+                feature: "storage_mb",
+            },
+            _sum: {
+                amount: true,
+            }
         });
 
         return {
-            totalTokens: usage?.totalTokens ? Number(usage.totalTokens) : 0,
-            totalStorage: usage?.totalStorage ? Number(usage.totalStorage) : 0,
+            // Specific features used in the UI
+            totalTokens: usageMap["images_generated"] || 0, // Mapping images to tokens for compatibility
+            totalStorage: storageUsage._sum.amount || 0,
+
+            // Raw map for detailed checks
+            api_calls: usageMap["api_calls"] || 0,
+            presentations_created: usageMap["presentations_created"] || 0,
+            images_generated: usageMap["images_generated"] || 0,
         };
     }
 };

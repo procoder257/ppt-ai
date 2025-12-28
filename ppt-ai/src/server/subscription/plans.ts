@@ -21,6 +21,15 @@ export const PLAN_FEATURES: Record<
     supportLevel: "priority",
     advancedAIModels: true,
   },
+  STARTER: {
+    presentationsPerMonth: 10,
+    canExportPPTX: true,
+    canUseCustomThemes: false,
+    canUsePremiumImages: false,
+    maxSlidesPerPresentation: 50,
+    supportLevel: "standard",
+    advancedAIModels: false,
+  },
   ENTERPRISE: {
     presentationsPerMonth: -1,
     canExportPPTX: true,
@@ -36,23 +45,29 @@ export const PLAN_FEATURES: Record<
 };
 
 export const PLAN_LIMITS: Record<SubscriptionPlanName, Record<string, number>> =
-  {
-    FREE: {
-      presentations_created: 3,
-      api_calls: 50,
-      images_generated: 20,
-      storage_mb: 100,
-    },
-    PRO: {
-      presentations_created: -1, // unlimited
-      api_calls: -1,
-      images_generated: -1,
-      storage_mb: 1000,
-    },
-    ENTERPRISE: {
-      presentations_created: -1,
-      api_calls: -1,
-      images_generated: -1,
-      storage_mb: -1,
-    },
-  };
+{
+  FREE: {
+    presentations_created: 3,
+    api_calls: 50,
+    images_generated: 20,
+    storage_mb: 100,
+  },
+  PRO: {
+    presentations_created: -1, // unlimited
+    api_calls: -1,
+    images_generated: -1,
+    storage_mb: 1000,
+  },
+  STARTER: {
+    presentations_created: 10,
+    api_calls: 100,
+    images_generated: 50,
+    storage_mb: 500,
+  },
+  ENTERPRISE: {
+    presentations_created: -1,
+    api_calls: -1,
+    images_generated: -1,
+    storage_mb: -1,
+  },
+};

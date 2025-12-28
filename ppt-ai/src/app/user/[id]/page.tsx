@@ -6,10 +6,10 @@ import { UserProfile } from "@/components/user/UserProfile";
 export default async function ProfilePage({
     params,
 }: {
-    params: { id: string };
+    params: Promise<{ id: string }>;
 }) {
     const session = await auth();
-    const userId = params.id;
+    const { id: userId } = await params;
 
     const user = await db.user.findUnique({
         where: { id: userId },

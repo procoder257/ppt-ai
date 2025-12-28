@@ -74,8 +74,8 @@ export function Testimonials() {
                                 <div className="md:col-span-4 relative">
                                     <div className="aspect-square relative rounded-2xl overflow-hidden shadow-2xl">
                                         <Image
-                                            src={testimonials[currentIndex].image}
-                                            alt={testimonials[currentIndex].name}
+                                            src={testimonials[currentIndex]?.image || ""}
+                                            alt={testimonials[currentIndex]?.name || "Testimonial"}
                                             fill
                                             className="object-cover"
                                         />
@@ -88,18 +88,18 @@ export function Testimonials() {
                                 {/* Right Content */}
                                 <div className="md:col-span-8 space-y-8 pl-0 md:pl-8">
                                     <div className="flex gap-1 text-yellow-400">
-                                        {[...Array(testimonials[currentIndex].rating)].map((_, i) => (
+                                        {[...Array(testimonials[currentIndex]?.rating || 5)].map((_, i) => (
                                             <Star key={i} className="h-6 w-6 fill-current" />
                                         ))}
                                     </div>
 
                                     <blockquote className="text-2xl md:text-3xl font-medium leading-relaxed text-foreground">
-                                        &quot;{testimonials[currentIndex].quote}&quot;
+                                        &quot;{testimonials[currentIndex]?.quote}&quot;
                                     </blockquote>
 
                                     <div>
-                                        <h4 className="text-xl font-bold text-foreground">{testimonials[currentIndex].name}</h4>
-                                        <p className="text-muted-foreground">{testimonials[currentIndex].role}, {testimonials[currentIndex].company}</p>
+                                        <h4 className="text-xl font-bold text-foreground">{testimonials[currentIndex]?.name}</h4>
+                                        <p className="text-muted-foreground">{testimonials[currentIndex]?.role}, {testimonials[currentIndex]?.company}</p>
                                     </div>
                                 </div>
                             </motion.div>
