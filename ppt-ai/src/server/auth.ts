@@ -1,32 +1,13 @@
-import { env } from "@/env";
 import { db } from "@/server/db";
 import { PrismaAdapter } from "@auth/prisma-adapter";
-import NextAuth, { type DefaultSession, type Session } from "next-auth";
+import NextAuth, { type Session } from "next-auth";
 import { type Adapter } from "next-auth/adapters";
-import GoogleProvider from "next-auth/providers/google";
-declare module "next-auth" {
-  interface Session extends DefaultSession {
-    user: {
-      id: string;
-      hasAccess: boolean;
-      location?: string;
-      role: string;
-      isAdmin: boolean;
-    } & DefaultSession["user"];
-  }
-
-  interface User {
-    hasAccess: boolean;
-    role: string;
-  }
-}
+import { authConfig } from "./auth.config";
 
 export const { auth, handlers, signIn, signOut } = NextAuth({
-  trustHost: true,
-  session: {
-    strategy: "jwt",
-  },
+  ...authConfig,
   callbacks: {
+    ...authConfig.callbacks,
     async jwt({ token, user, trigger, session }) {
       if (user) {
         token.id = user.id;
@@ -62,14 +43,10 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
 
       return token;
     },
-    async session({ session, token }) {
-      session.user.id = token.id as string;
-      session.user.hasAccess = token.hasAccess as boolean;
-      session.user.location = token.location as string;
-      session.user.role = token.role as string;
-      session.user.isAdmin = token.role === "ADMIN";
-      return session;
-    },
+    // We can keep the session callback from authConfig, or override if needed. 
+    // Since authConfig.callbacks.session is sufficient, we technically don't need to repeat it here 
+    // unless we want to merge behaviors. But spreading ...authConfig.callbacks handles it.
+
     async signIn({ user, account }) {
       if (account?.provider === "google") {
         const dbUser = await db.user.findUnique({
@@ -89,12 +66,5 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
       return true;
     },
   },
-
   adapter: PrismaAdapter(db) as Adapter,
-  providers: [
-    GoogleProvider({
-      clientId: env.GOOGLE_CLIENT_ID,
-      clientSecret: env.GOOGLE_CLIENT_SECRET,
-    }),
-  ],
 });
