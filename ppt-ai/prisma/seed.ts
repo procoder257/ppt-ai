@@ -41,8 +41,8 @@ async function main() {
       description: "For individuals",
       priceMonthly: 25,
       priceYearly: 240,
-      paypalPlanIdMonthly: "P-6YS76998ST9320021NFDGAHA",
-      paypalPlanIdYearly: "P-0HC52330X35574305NFDGAHQ",
+      paypalPlanIdMonthly: "P-7P0324366L983593UNFOAVHI",
+      paypalPlanIdYearly: "P-38H54828F6197681SNFOAVHQ",
       features: {
         presentationsPerMonth: 10,
         canExportPPTX: true,
@@ -65,8 +65,8 @@ async function main() {
       description: "For individuals",
       priceMonthly: 25,
       priceYearly: 240,
-      paypalPlanIdMonthly: "P-6YS76998ST9320021NFDGAHA",
-      paypalPlanIdYearly: "P-0HC52330X35574305NFDGAHQ",
+      paypalPlanIdMonthly: "P-7P0324366L983593UNFOAVHI",
+      paypalPlanIdYearly: "P-38H54828F6197681SNFOAVHQ",
       features: {
         presentationsPerMonth: 10,
         canExportPPTX: true,
@@ -94,8 +94,8 @@ async function main() {
       description: "For professionals and teams",
       priceMonthly: 35,
       priceYearly: 360,
-      paypalPlanIdMonthly: "P-8YW803282F1123848NFDGAHY",
-      paypalPlanIdYearly: "P-70F84556CF534361XNFDGAIA",
+      paypalPlanIdMonthly: "P-46U79340SN956652ANFOAVHQ",
+      paypalPlanIdYearly: "P-44T34991U8959143KNFOAVHY",
       features: {
         presentationsPerMonth: -1,
         canExportPPTX: true,
@@ -118,8 +118,8 @@ async function main() {
       description: "For professionals and teams",
       priceMonthly: 35,
       priceYearly: 360,
-      paypalPlanIdMonthly: "P-8YW803282F1123848NFDGAHY",
-      paypalPlanIdYearly: "P-70F84556CF534361XNFDGAIA",
+      paypalPlanIdMonthly: "P-46U79340SN956652ANFOAVHQ",
+      paypalPlanIdYearly: "P-44T34991U8959143KNFOAVHY",
       features: {
         presentationsPerMonth: -1,
         canExportPPTX: true,
