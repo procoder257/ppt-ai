@@ -5,7 +5,7 @@ import { env } from "@/env";
  * Initialize Resend client.
  * API Key is validated in src/env.js
  */
-export const resend = new Resend(env.RESEND_API_KEY);
+export const resend = new Resend(env.RESEND_API_KEY ?? "re_missing");
 
 /**
  * Default sender email address.
