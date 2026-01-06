@@ -1,0 +1,11 @@
+[build]
+  base = "ppt-ai"
+  command = "npm run build"
+  publish = ".next"
+
+[build.environment]
+  SECRETS_SCAN_OMIT_PATHS = "TESTING.md,scripts/verify-flow.ts"
+  SECRETS_SCAN_OMIT_KEYS = "PAYPAL_MODE,NEXTAUTH_URL"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"

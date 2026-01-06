@@ -2,7 +2,6 @@ import { db } from "@/server/db";
 import {
     Card,
     CardContent,
-    CardDescription,
     CardHeader,
     CardTitle,
 } from "@/components/ui/card";
@@ -15,6 +14,8 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import { format } from "date-fns";
+
+export const dynamic = "force-dynamic";
 
 export default async function AdminUsagePage() {
     // Fetch usage stats

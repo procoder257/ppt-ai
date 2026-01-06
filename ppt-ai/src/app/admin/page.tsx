@@ -4,6 +4,8 @@ import { Users, CreditCard, DollarSign, Activity } from "lucide-react";
 import { RevenueChart } from "@/components/admin/RevenueChart";
 import { UsageChart } from "@/components/admin/UsageChart";
 
+export const dynamic = "force-dynamic";
+
 export default async function AdminDashboard() {
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);

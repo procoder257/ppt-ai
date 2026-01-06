@@ -1,33 +1,15 @@
-import { env } from "@/env";
 import { db } from "@/server/db";
 import { PrismaAdapter } from "@auth/prisma-adapter";
-import NextAuth, { type DefaultSession, type Session } from "next-auth";
+import NextAuth, { type Session } from "next-auth";
 import { type Adapter } from "next-auth/adapters";
-import GoogleProvider from "next-auth/providers/google";
+import { authConfig } from "./auth.config";
 import CredentialsProvider from "next-auth/providers/credentials";
-declare module "next-auth" {
-  interface Session extends DefaultSession {
-    user: {
-      id: string;
-      hasAccess: boolean;
-      location?: string;
-      role: string;
-      isAdmin: boolean;
-    } & DefaultSession["user"];
-  }
-
-  interface User {
-    hasAccess: boolean;
-    role: string;
-  }
-}
+import { emailService } from "./email/service";
 
 export const { auth, handlers, signIn, signOut } = NextAuth({
-  trustHost: true,
-  session: {
-    strategy: "jwt",
-  },
+  ...authConfig,
   callbacks: {
+    ...authConfig.callbacks,
     async jwt({ token, user, trigger, session }) {
       if (user) {
         token.id = user.id;
@@ -63,14 +45,7 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
 
       return token;
     },
-    async session({ session, token }) {
-      session.user.id = token.id as string;
-      session.user.hasAccess = token.hasAccess as boolean;
-      session.user.location = token.location as string;
-      session.user.role = token.role as string;
-      session.user.isAdmin = token.role === "ADMIN";
-      return session;
-    },
+
     async signIn({ user, account }) {
       if (account?.provider === "google") {
         const dbUser = await db.user.findUnique({
@@ -86,24 +61,24 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
           user.role = "USER";
         }
       }
+
       return true;
     },
   },
   events: {
     async createUser({ user }) {
       if (user.email) {
-        // Import dynamically to avoid circular deps if any, though unlikely here
-        const { EmailService } = await import("./email/service");
-        await EmailService.sendWelcomeEmail(user.email, user.name ?? "there");
+        try {
+          await emailService.sendWelcomeEmail(user.email, user.name ?? "there");
+        } catch (error) {
+          console.error("Failed to send welcome email:", error);
+        }
       }
     }
   },
   adapter: PrismaAdapter(db) as Adapter,
   providers: [
-    GoogleProvider({
-      clientId: env.GOOGLE_CLIENT_ID,
-      clientSecret: env.GOOGLE_CLIENT_SECRET,
-    }),
+    ...authConfig.providers,
     CredentialsProvider({
       name: "Admin Login",
       credentials: {
@@ -117,8 +92,6 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
         if (!credentials?.email || !credentials?.password) return null;
 
         if (adminEmails.includes(credentials.email as string) && credentials.password === adminPassword) {
-          // Return a user object that mimics the DB user structure
-          // We fetch the user from DB to get their ID if they exist, otherwise we might have issues with the adapter
           const user = await db.user.findUnique({
             where: { email: credentials.email as string }
           });
@@ -129,12 +102,10 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
               name: user.name,
               email: user.email,
               image: user.image,
-              role: "ADMIN", // Force admin role for this session
+              role: "ADMIN",
               hasAccess: true
             };
           } else {
-            // If user doesn't exist in DB, we create a temporary session user
-            // Ideally admin should exist in DB, but for this login flow we can return a mock
             return {
               id: "admin-temp-id",
               name: "Admin User",

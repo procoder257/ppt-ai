@@ -10,6 +10,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 
+export const dynamic = "force-dynamic";
+
 export default async function AdminSubscriptionsPage() {
     const subscriptions = await db.subscription.findMany({
         where: {
