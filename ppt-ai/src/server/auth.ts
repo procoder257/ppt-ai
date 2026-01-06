@@ -4,7 +4,7 @@ import NextAuth, { type Session } from "next-auth";
 import { type Adapter } from "next-auth/adapters";
 import { authConfig } from "./auth.config";
 import CredentialsProvider from "next-auth/providers/credentials";
-import { emailService } from "./email/service";
+import { EmailService } from "./email/service";
 
 export const { auth, handlers, signIn, signOut } = NextAuth({
   ...authConfig,
@@ -69,7 +69,7 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
     async createUser({ user }) {
       if (user.email) {
         try {
-          await emailService.sendWelcomeEmail(user.email, user.name ?? "there");
+          await EmailService.sendWelcomeEmail(user.email, user.name ?? "there");
         } catch (error) {
           console.error("Failed to send welcome email:", error);
         }
