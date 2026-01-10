@@ -97,18 +97,18 @@ async function main() {
       paypalPlanIdMonthly: "P-46U79340SN956652ANFOAVHQ",
       paypalPlanIdYearly: "P-44T34991U8959143KNFOAVHY",
       features: {
-        presentationsPerMonth: 30, // Updated from -1 to 30
+        presentationsPerMonth: -1,
         canExportPPTX: true,
         canUseCustomThemes: true,
         canUsePremiumImages: true,
-        maxSlidesPerPresentation: 25, // Updated from -1 to 25
+        maxSlidesPerPresentation: -1,
         supportLevel: "priority",
         advancedAIModels: true,
       },
       limits: {
-        presentations_created: 30, // Soft limit per month
+        presentations_created: -1,
         api_calls: -1,
-        images_generated: 60, // 60 images/month
+        images_generated: -1,
         storage_mb: 1000,
       },
     },
@@ -121,18 +121,18 @@ async function main() {
       paypalPlanIdMonthly: "P-46U79340SN956652ANFOAVHQ",
       paypalPlanIdYearly: "P-44T34991U8959143KNFOAVHY",
       features: {
-        presentationsPerMonth: 30,
+        presentationsPerMonth: -1,
         canExportPPTX: true,
         canUseCustomThemes: true,
         canUsePremiumImages: true,
-        maxSlidesPerPresentation: 25,
+        maxSlidesPerPresentation: -1,
         supportLevel: "priority",
         advancedAIModels: true,
       },
       limits: {
-        presentations_created: 30,
+        presentations_created: -1,
         api_calls: -1,
-        images_generated: 60,
+        images_generated: -1,
         storage_mb: 1000,
       },
     },

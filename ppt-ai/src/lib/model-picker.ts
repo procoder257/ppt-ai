@@ -1,33 +1,32 @@
 import { createOpenAI } from "@ai-sdk/openai";
-import { createGoogle } from "@ai-sdk/google"; // Requires @ai-sdk/google installed
 import { type LanguageModelV1 } from "ai";
+import { createOllama } from "ollama-ai-provider";
 
 /**
- * Centralized model picker - High Margin Strategy
- * Hardcodes the most cost-effective model (Gemini 1.5 Flash / 2.0 Flash-Lite)
+ * Centralized model picker function for all presentation generation routes
+ * Supports OpenAI, Ollama, and LM Studio models
  */
 export function modelPicker(
-  _modelProvider?: string, // Ignored
-  _modelId?: string,      // Ignored
+  modelProvider: string,
+  modelId?: string,
 ): LanguageModelV1 {
-  // Strategy: >50% Margin
-  // Primary: Gemini 1.5 Flash (approx $0.075/1M input, effectively free for low volume)
-  // We use createGoogle from the SDK.
+  if (modelProvider === "ollama" && modelId) {
+    // Use Ollama AI provider
+    const ollama = createOllama();
+    return ollama(modelId) as unknown as LanguageModelV1;
+  }
 
-  // Note: Ensure GOOGLE_GENERATIVE_AI_API_KEY is in .env
-  const google = createGoogle({
-    // apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY
-  });
+  if (modelProvider === "lmstudio" && modelId) {
+    // Use LM Studio with OpenAI compatible provider
+    const lmstudio = createOpenAI({
+      name: "lmstudio",
+      baseURL: "http://localhost:1234/v1",
+      apiKey: "lmstudio",
+    });
+    return lmstudio(modelId) as unknown as LanguageModelV1;
+  }
 
-  // Using 'gemini-1.5-flash' as the robust, cheap default.
-  // If 'gemini-2.0-flash-exp' is available and preferred, switch strings.
-  // User asked for "Gemini 2.0 Flash-Lite". Currently `gemini-1.5-flash` is the standard "Lite".
-  return google("gemini-1.5-flash") as unknown as LanguageModelV1;
+  // Default to OpenAI
+  const openai = createOpenAI();
+  return openai("gpt-4o-mini") as unknown as LanguageModelV1;
 }
-
-/* 
-   Fallback Logic Note:
-   To implement true fallback (Gemini -> OpenAI), we would need to wrap the generate call
-   in a try/catch block in the API route, or use specific "fallback" model composition if supported.
-   For now, we enforce Gemini.
-*/
