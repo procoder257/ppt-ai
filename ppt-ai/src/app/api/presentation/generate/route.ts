@@ -1,4 +1,5 @@
 import { modelPicker } from "@/lib/model-picker";
+import { modelSupports } from "@/lib/ai-models-config";
 import { auth } from "@/server/auth";
 import { streamText } from "ai";
 import { NextResponse } from "next/server";
@@ -315,9 +316,25 @@ export async function POST(req: Request) {
       .replace(/{TOTAL_SLIDES}/g, outline.length.toString())
       .replace(/{SEARCH_RESULTS}/g, searchResultsText);
 
-    const result = streamText({
+    // Check if model supports system messages (e.g., o1 doesn't)
+    const supportsSystemMessages = modelId
+      ? modelSupports(modelId, "supportsSystemMessages")
+      : true;
+
+    // Build streamText options based on model capabilities
+    const streamOptions: Parameters<typeof streamText>[0] = {
       model,
-      prompt: formattedPrompt,
+      ...(supportsSystemMessages
+        ? { prompt: formattedPrompt }
+        : {
+            // For models that don't support system messages, use messages array
+            messages: [
+              {
+                role: "user",
+                content: formattedPrompt,
+              },
+            ],
+          }),
       onFinish: async ({ usage }) => {
         console.log("DEBUG: onFinish triggered");
         console.log("DEBUG: Usage object:", JSON.stringify(usage, null, 2));
@@ -374,7 +391,9 @@ export async function POST(req: Request) {
           console.log("DEBUG: No session user id found in onFinish");
         }
       },
-    });
+    };
+
+    const result = streamText(streamOptions);
 
     return result.toDataStreamResponse();
   } catch (error) {

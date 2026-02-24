@@ -1,4 +1,5 @@
 import { modelPicker } from "@/lib/model-picker";
+import { modelSupports } from "@/lib/ai-models-config";
 import { auth } from "@/server/auth";
 import { streamText } from "ai";
 import { NextResponse } from "next/server";
@@ -102,24 +103,43 @@ export async function POST(req: Request) {
     // Create model based on selection
     const model = modelPicker(modelProvider, modelId);
 
-    const result = streamText({
+    // Check model capabilities
+    const supportsTools = modelId ? modelSupports(modelId, "supportsTools") : true;
+    const supportsSystemMessages = modelId
+      ? modelSupports(modelId, "supportsSystemMessages")
+      : true;
+
+    const systemPromptFormatted = outlineSystemPrompt
+      .replace("{numberOfCards}", numberOfCards.toString())
+      .replace("{language}", actualLanguage)
+      .replace("{currentDate}", currentDate);
+
+    // Build streamText options based on model capabilities
+    const streamOptions: Parameters<typeof streamText>[0] = {
       model,
-      system: outlineSystemPrompt
-        .replace("{numberOfCards}", numberOfCards.toString())
-        .replace("{language}", actualLanguage)
-        .replace("{currentDate}", currentDate),
+      ...(supportsSystemMessages
+        ? { system: systemPromptFormatted }
+        : {}),
       messages: [
         {
           role: "user",
-          content: `Create a presentation outline for: ${prompt}`,
+          content: supportsSystemMessages
+            ? `Create a presentation outline for: ${prompt}`
+            : `${systemPromptFormatted}\n\nCreate a presentation outline for: ${prompt}`,
         },
       ],
-      tools: {
-        webSearch: search_tool,
-      },
-      maxSteps: 5, // Allow up to 5 tool calls
-      toolChoice: "auto", // Let the model decide when to use tools
-    });
+      ...(supportsTools
+        ? {
+            tools: {
+              webSearch: search_tool,
+            },
+            maxSteps: 5,
+            toolChoice: "auto" as const,
+          }
+        : {}),
+    };
+
+    const result = streamText(streamOptions);
 
     return result.toDataStreamResponse();
   } catch (error) {

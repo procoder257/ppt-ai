@@ -14,8 +14,14 @@ import {
   setSelectedModel,
   useLocalModels,
 } from "@/hooks/presentation/useLocalModels";
+import {
+  AI_MODELS,
+  getAIModelById,
+  getProviderDisplayName,
+  type AIProvider,
+} from "@/lib/ai-models-config";
 import { usePresentationState } from "@/states/presentation-state";
-import { Bot, Cpu, Loader2, Monitor } from "lucide-react";
+import { Bot, Cpu, Loader2, Monitor, Sparkles, Brain, Zap } from "lucide-react";
 import { useEffect, useRef } from "react";
 
 export function ModelPicker({
@@ -36,7 +42,7 @@ export function ModelPicker({
       if (savedModel) {
         console.log("Restoring model from localStorage:", savedModel);
         setModelProvider(
-          savedModel.modelProvider as "openai" | "ollama" | "lmstudio",
+          savedModel.modelProvider as "openai" | "google" | "anthropic" | "mistral" | "cohere" | "ollama" | "lmstudio",
         );
         setModelId(savedModel.modelId);
       }
@@ -82,39 +88,78 @@ export function ModelPicker({
     isDownloadable,
   });
 
+  // Get provider icon
+  const getProviderIcon = (provider: AIProvider) => {
+    switch (provider) {
+      case "openai":
+        return Bot;
+      case "google":
+        return Sparkles;
+      case "anthropic":
+        return Brain;
+      case "mistral":
+      case "cohere":
+        return Zap;
+      case "ollama":
+        return Cpu;
+      case "lmstudio":
+        return Monitor;
+      default:
+        return Bot;
+    }
+  };
+
   // Get current model value
   const getCurrentModelValue = () => {
     if (modelProvider === "ollama") {
       return `ollama-${modelId}`;
     } else if (modelProvider === "lmstudio") {
       return `lmstudio-${modelId}`;
+    } else if (modelId) {
+      return `${modelProvider}-${modelId}`;
     }
     return modelProvider;
   };
 
   // Get current model option for display
   const getCurrentModelOption = () => {
-    const currentValue = getCurrentModelValue();
+    // Check cloud AI models from config
+    if (modelId) {
+      const aiModel = getAIModelById(modelId);
+      if (aiModel) {
+        return {
+          label: aiModel.name,
+          icon: getProviderIcon(aiModel.provider),
+        };
+      }
+    }
 
-    if (currentValue === "openai") {
+    // Check local ollama models
+    const ollamaLocalModel = localModels.find(
+      (model) => model.id === `ollama-${modelId}`,
+    );
+    if (ollamaLocalModel) {
       return {
-        label: "GPT-4o-mini",
-        icon: Bot,
+        label: ollamaLocalModel.name,
+        icon: Cpu,
       };
     }
 
-    // Check local models first
-    const localModel = localModels.find((model) => model.id === currentValue);
-    if (localModel) {
+    // Check local lmstudio models
+    const lmstudioLocalModel = localModels.find(
+      (model) => model.id === `lmstudio-${modelId}`,
+    );
+    if (lmstudioLocalModel) {
       return {
-        label: localModel.name,
-        icon: localModel.provider === "ollama" ? Cpu : Monitor,
+        label: lmstudioLocalModel.name,
+        icon: Monitor,
       };
     }
 
     // Check downloadable models
     const downloadableModel = downloadableModels.find(
-      (model) => model.id === currentValue,
+      (model) =>
+        model.id === `ollama-${modelId}` || model.id === `lmstudio-${modelId}`,
     );
     if (downloadableModel) {
       return {
@@ -132,19 +177,36 @@ export function ModelPicker({
   // Handle model change
   const handleModelChange = (value: string) => {
     console.log("Model changed to:", value);
-    if (value === "openai") {
-      setModelProvider("openai");
-      setModelId("");
-      setSelectedModel("openai", "");
-      console.log("Saved to localStorage: openai, ''");
-    } else if (value.startsWith("ollama-")) {
-      const model = value.replace("ollama-", "");
+
+    // Parse the value to get provider and model ID
+    const [provider, ...modelParts] = value.split("-");
+    const model = modelParts.join("-");
+
+    if (!provider) return;
+
+    // Handle cloud AI providers
+    if (
+      ["openai", "google", "anthropic", "mistral", "cohere"].includes(provider)
+    ) {
+      setModelProvider(
+        provider as
+          | "openai"
+          | "google"
+          | "anthropic"
+          | "mistral"
+          | "cohere",
+      );
+      setModelId(model);
+      setSelectedModel(provider, model);
+      console.log(`Saved to localStorage: ${provider}, ${model}`);
+    }
+    // Handle local providers
+    else if (provider === "ollama") {
       setModelProvider("ollama");
       setModelId(model);
       setSelectedModel("ollama", model);
       console.log("Saved to localStorage: ollama,", model);
-    } else if (value.startsWith("lmstudio-")) {
-      const model = value.replace("lmstudio-", "");
+    } else if (provider === "lmstudio") {
       setModelProvider("lmstudio");
       setModelId(model);
       setSelectedModel("lmstudio", model);
@@ -193,21 +255,38 @@ export function ModelPicker({
             </SelectGroup>
           )}
 
-          {/* OpenAI Group */}
-          <SelectGroup>
-            <SelectLabel>Cloud Models</SelectLabel>
-            <SelectItem value="openai">
-              <div className="flex items-center gap-3">
-                <Bot className="h-4 w-4 flex-shrink-0" />
-                <div className="flex flex-col min-w-0">
-                  <span className="truncate text-sm">GPT-4o-mini</span>
-                  <span className="text-xs text-muted-foreground truncate">
-                    Cloud-based AI model
-                  </span>
-                </div>
-              </div>
-            </SelectItem>
-          </SelectGroup>
+          {/* Cloud AI Models - Grouped by Provider */}
+          {(["openai", "google", "anthropic", "mistral", "cohere"] as const).map(
+            (provider) => {
+              const providerModels = AI_MODELS.filter(
+                (m) => m.provider === provider,
+              );
+              if (providerModels.length === 0) return null;
+
+              const Icon = getProviderIcon(provider);
+              return (
+                <SelectGroup key={provider}>
+                  <SelectLabel>{getProviderDisplayName(provider)}</SelectLabel>
+                  {providerModels.map((model) => (
+                    <SelectItem
+                      key={model.id}
+                      value={`${provider}-${model.id}`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <Icon className="h-4 w-4 flex-shrink-0" />
+                        <div className="flex flex-col min-w-0">
+                          <span className="truncate text-sm">{model.name}</span>
+                          <span className="text-xs text-muted-foreground truncate">
+                            {model.description}
+                          </span>
+                        </div>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              );
+            },
+          )}
 
           {/* Local Ollama Models */}
           {ollamaModels.length > 0 && (

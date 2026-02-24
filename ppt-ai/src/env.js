@@ -9,8 +9,15 @@ export const env = createEnv({
       .enum(["development", "test", "production"])
       .default("development"),
 
-    OPENAI_API_KEY: z.string(),
-    TOGETHER_AI_API_KEY: z.string(),
+    // AI Provider API Keys
+    OPENAI_API_KEY: z.string().optional(),
+    GOOGLE_GENERATIVE_AI_API_KEY: z.string().optional(),
+    ANTHROPIC_API_KEY: z.string().optional(),
+    MISTRAL_API_KEY: z.string().optional(),
+    COHERE_API_KEY: z.string().optional(),
+    TOGETHER_AI_API_KEY: z.string().optional(),
+
+    // Google OAuth
     GOOGLE_CLIENT_ID: z.string(),
     GOOGLE_CLIENT_SECRET: z.string(),
     UNSPLASH_ACCESS_KEY: z.string(),
@@ -45,8 +52,15 @@ export const env = createEnv({
     UNSPLASH_ACCESS_KEY: process.env.UNSPLASH_ACCESS_KEY,
     TAVILY_API_KEY: process.env.TAVILY_API_KEY,
     NODE_ENV: process.env.NODE_ENV,
+
+    // AI Provider API Keys
     OPENAI_API_KEY: process.env.OPENAI_API_KEY,
+    GOOGLE_GENERATIVE_AI_API_KEY: process.env.GOOGLE_GENERATIVE_AI_API_KEY,
+    ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY,
+    MISTRAL_API_KEY: process.env.MISTRAL_API_KEY,
+    COHERE_API_KEY: process.env.COHERE_API_KEY,
     TOGETHER_AI_API_KEY: process.env.TOGETHER_AI_API_KEY,
+
     NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET,
     NEXTAUTH_URL: process.env.NEXTAUTH_URL,
     PAYPAL_CLIENT_ID: process.env.PAYPAL_CLIENT_ID,
