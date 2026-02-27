@@ -58,6 +58,9 @@ export const metadata: Metadata = {
       "Create stunning, professional presentations in seconds with PPT AI. Better than Gamma.",
   },
   icons: [{ rel: "icon", url: "/favicon.ico" }],
+  verification: {
+    google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || "add-google-verification-code-here",
+  },
 };
 
 export default async function RootLayout({
@@ -70,6 +73,22 @@ export default async function RootLayout({
       <NextAuthProvider>
         <html lang="en" suppressHydrationWarning>
           <body className={`${fontSans.variable} font-sans antialiased`}>
+            <script
+              type="application/ld+json"
+              dangerouslySetInnerHTML={{
+                __html: JSON.stringify({
+                  "@context": "https://schema.org",
+                  "@type": "WebSite",
+                  name: "PPT AI",
+                  url: "https://pptai.online",
+                  potentialAction: {
+                    "@type": "SearchAction",
+                    target: "https://pptai.online/search?q={search_term_string}",
+                    "query-input": "required name=search_term_string",
+                  },
+                }),
+              }}
+            />
             <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
               <CSPostHogProvider>{children}</CSPostHogProvider>
             </ThemeProvider>
