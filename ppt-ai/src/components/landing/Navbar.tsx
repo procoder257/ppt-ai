@@ -30,14 +30,14 @@ export function Navbar() {
             )}
         >
             <div className="container mx-auto px-4 flex items-center justify-between">
-                <div className="flex items-center gap-2">
+                <Link href="/" className="flex items-center gap-2">
                     <div className="h-9 w-9 rounded-xl bg-primary flex items-center justify-center shadow-lg shadow-primary/20">
                         <span className="text-white font-bold text-xl">P</span>
                     </div>
                     <span className="text-xl font-bold text-foreground">
                         PPT AI
                     </span>
-                </div>
+                </Link>
 
                 <div className="hidden md:flex items-center gap-8">
                     <Link href="#features" className="text-sm font-medium hover:text-primary transition-colors">

@@ -4,7 +4,6 @@ import { env } from "@/env";
 export default function sitemap(): MetadataRoute.Sitemap {
     const baseUrl = env.NEXTAUTH_URL;
 
-    // In a real implementation, you would fetch these from MDX or a CMS
     const blogSlugs = [
         "top-5-ai-presentation-makers-in-2026",
         "how-to-make-powerpoint-from-pdf-ai",
@@ -15,6 +14,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
         "ai-pitch-deck-generator",
         "ai-slides-for-sales",
         "pdf-to-ppt-ai",
+        "ai-presentation-maker-for-students",
+        "ai-presentation-maker-for-business",
+        "free-ai-presentation-maker",
     ];
 
     const blogRoutes: MetadataRoute.Sitemap = blogSlugs.map((slug) => ({
@@ -42,13 +44,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
             url: `${baseUrl}/pricing`,
             lastModified: new Date(),
             changeFrequency: 'weekly',
-            priority: 0.8,
+            priority: 0.9,
         },
         {
-            url: `${baseUrl}/auth/signin`,
+            url: `${baseUrl}/about`,
             lastModified: new Date(),
             changeFrequency: 'monthly',
-            priority: 0.5,
+            priority: 0.8,
         },
         {
             url: `${baseUrl}/blog`,
@@ -61,6 +63,30 @@ export default function sitemap(): MetadataRoute.Sitemap {
             lastModified: new Date(),
             changeFrequency: 'weekly',
             priority: 0.9,
+        },
+        {
+            url: `${baseUrl}/privacy`,
+            lastModified: new Date(),
+            changeFrequency: 'monthly',
+            priority: 0.4,
+        },
+        {
+            url: `${baseUrl}/terms`,
+            lastModified: new Date(),
+            changeFrequency: 'monthly',
+            priority: 0.4,
+        },
+        {
+            url: `${baseUrl}/cookies`,
+            lastModified: new Date(),
+            changeFrequency: 'monthly',
+            priority: 0.4,
+        },
+        {
+            url: `${baseUrl}/auth/signin`,
+            lastModified: new Date(),
+            changeFrequency: 'monthly',
+            priority: 0.6,
         },
         ...blogRoutes,
         ...useCaseRoutes,

@@ -112,8 +112,8 @@ export function Hero() {
                                 Try now
                             </Button>
                         </Link>
-                        <span className="text-sm font-handwriting transform -rotate-6 text-muted-foreground mt-8 ml-2 hidden sm:block">
-                            *No credit card required
+                        <span className="text-sm transform -rotate-6 text-muted-foreground mt-8 ml-2 hidden sm:block">
+                            *5 free/month, no credit card
                         </span>
                     </motion.div>
 

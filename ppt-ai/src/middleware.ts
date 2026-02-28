@@ -12,6 +12,11 @@ export async function middleware(request: NextRequest) {
   const isPricingPage = pathname.startsWith("/pricing");
   const isAdminPage = pathname.startsWith("/admin");
   const isApiRoute = pathname.startsWith("/api");
+  const isPublicPage =
+    pathname.startsWith("/blog") ||
+    pathname.startsWith("/use-cases") ||
+    pathname.startsWith("/about") ||
+    pathname === "/cookies";
 
   console.log("[Middleware]", {
     path: pathname,
@@ -28,7 +33,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // If user is not authenticated and trying to access a protected route, redirect to sign-in
-  if (!session && !isAuthPage && !isPricingPage && !isApiRoute && !isAdminPage) {
+  if (!session && !isAuthPage && !isPricingPage && !isApiRoute && !isAdminPage && !isPublicPage) {
     console.log("[Middleware] No session on protected route → /auth/signin");
     return NextResponse.redirect(
       new URL(
