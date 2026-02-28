@@ -33,17 +33,26 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: "/",
+    url: "https://pptai.online",
     title: "PPT AI - AI-Powered Presentation Generator",
     description:
       "Create stunning, professional presentations in seconds with PPT AI. Transform your ideas into engaging slides automatically.",
     siteName: "PPT AI",
+    images: [
+      {
+        url: "https://pptai.online/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "PPT AI – AI Presentation Generator",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "PPT AI - AI-Powered Presentation Generator",
     description:
       "Create stunning, professional presentations in seconds with PPT AI.",
+    images: ["https://pptai.online/og-image.png"],
   },
   icons: [{ rel: "icon", url: "/favicon.ico" }],
   verification: {
