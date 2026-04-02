@@ -27,6 +27,7 @@ export const authConfig = {
             clientSecret: env.GOOGLE_CLIENT_SECRET,
         }),
     ],
+    secret: process.env.NEXTAUTH_SECRET ?? process.env.AUTH_SECRET,
     session: {
         strategy: "jwt",
     },
