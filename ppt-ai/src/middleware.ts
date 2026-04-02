@@ -1,11 +1,11 @@
-import NextAuth from "next-auth";
+import NextAuth, { type Session } from "next-auth";
 import { authConfig } from "@/server/auth.config";
 import { NextResponse, type NextRequest } from "next/server";
 
 const { auth } = NextAuth(authConfig);
 
 export async function middleware(request: NextRequest) {
-  let session = null;
+  let session: Session | null = null;
   try {
     session = await auth();
   } catch (err) {
