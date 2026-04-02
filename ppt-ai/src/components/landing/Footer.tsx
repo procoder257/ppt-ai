@@ -19,13 +19,13 @@ export function Footer() {
                             AI-powered presentation builder for modern professionals.
                         </p>
                         <div className="flex gap-4 text-muted-foreground">
-                            <Link href="#" className="hover:text-primary transition-colors">
+                            <Link href="https://x.com/pptai_online" aria-label="PPT AI on X (Twitter)" className="hover:text-primary transition-colors">
                                 <Twitter className="h-5 w-5" />
                             </Link>
-                            <Link href="#" className="hover:text-primary transition-colors">
+                            <Link href="https://linkedin.com/company/pptai" aria-label="PPT AI on LinkedIn" className="hover:text-primary transition-colors">
                                 <Linkedin className="h-5 w-5" />
                             </Link>
-                            <Link href="#" className="hover:text-primary transition-colors">
+                            <Link href="https://github.com/procoder257/ppt-ai" aria-label="PPT AI on GitHub" className="hover:text-primary transition-colors">
                                 <Github className="h-5 w-5" />
                             </Link>
                         </div>
