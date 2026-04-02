@@ -5,7 +5,13 @@ import { NextResponse, type NextRequest } from "next/server";
 const { auth } = NextAuth(authConfig);
 
 export async function middleware(request: NextRequest) {
-  const session = await auth();
+  let session = null;
+  try {
+    session = await auth();
+  } catch (err) {
+    console.error("[Middleware] auth() failed — allowing request through:", err);
+    return NextResponse.next();
+  }
   const pathname = request.nextUrl.pathname;
 
   const isAuthPage = pathname.startsWith("/auth");
