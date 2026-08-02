@@ -15,8 +15,15 @@ export const env = createEnv({
     GOOGLE_CLIENT_SECRET: z.string(),
     UNSPLASH_ACCESS_KEY: z.string(),
     NEXTAUTH_URL: z.preprocess(
-      (str) => process.env.VERCEL_URL ?? str,
-      process.env.VERCEL ? z.string() : z.string().url(),
+      (str) => {
+        const url = process.env.VERCEL_URL ?? str;
+
+        // Vercel exposes VERCEL_URL as a hostname without a protocol.
+        return typeof url === "string" && !url.includes("://")
+          ? `https://${url}`
+          : url;
+      },
+      z.string().url(),
     ),
     NEXTAUTH_SECRET:
       process.env.NODE_ENV === "production"
