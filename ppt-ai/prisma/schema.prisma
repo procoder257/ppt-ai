@@ -24,6 +24,7 @@ model Account {
   user                     User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
+  @@index([userId])
 }
 
 model User {
@@ -64,6 +65,9 @@ model BaseDocument {
   user         User               @relation(fields: [userId], references: [id])
   favorites    FavoriteDocument[]
   presentation Presentation?
+
+  @@index([userId, updatedAt])
+  @@index([isPublic, updatedAt])
 }
 
 model Presentation {
@@ -80,6 +84,8 @@ model Presentation {
   customThemeId     String?
   customTheme       CustomTheme? @relation(fields: [customThemeId], references: [id])
   base              BaseDocument @relation(fields: [id], references: [id], onDelete: Cascade)
+
+  @@index([customThemeId])
 }
 
 model CustomTheme {
@@ -104,6 +110,9 @@ model FavoriteDocument {
   userId     String
   document   BaseDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
   user       User         @relation(fields: [userId], references: [id])
+
+  @@unique([userId, documentId])
+  @@index([documentId])
 }
 
 model GeneratedImage {
@@ -114,6 +123,8 @@ model GeneratedImage {
   userId    String
   prompt    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model SubscriptionPlan {
