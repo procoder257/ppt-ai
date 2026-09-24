@@ -12,6 +12,7 @@ const fontSans = Plus_Jakarta_Sans({
 });
 
 import { env } from "@/env";
+import { JsonLd } from "@/components/seo/JsonLd";
 
 export const metadata: Metadata = {
   metadataBase: new URL(env.NEXTAUTH_URL),
@@ -70,10 +71,8 @@ export default async function RootLayout({
       <NextAuthProvider>
         <html lang="en" suppressHydrationWarning>
           <body className={`${fontSans.variable} font-sans antialiased`}>
-            <script
-              type="application/ld+json"
-              dangerouslySetInnerHTML={{
-                __html: JSON.stringify({
+            <JsonLd
+              data={{
                   "@context": "https://schema.org",
                   "@type": "WebSite",
                   name: "PPT AI",
@@ -83,8 +82,7 @@ export default async function RootLayout({
                     target: "https://pptai.online/search?q={search_term_string}",
                     "query-input": "required name=search_term_string",
                   },
-                }),
-              }}
+                }}
             />
             <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
               <CSPostHogProvider>{children}</CSPostHogProvider>
