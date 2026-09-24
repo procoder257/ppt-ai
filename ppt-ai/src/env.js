@@ -38,11 +38,13 @@ export const env = createEnv({
     ADMIN_EMAILS: z.string().optional(),
     RESEND_API_KEY: z.string().optional(),
     SENTRY_DSN: z.string().url().optional(),
+    SENTRY_TRACES_SAMPLE_RATE: z.coerce.number().min(0).max(1).optional(),
   },
 
   client: {
     NEXT_PUBLIC_POSTHOG_KEY: z.string().optional(),
     NEXT_PUBLIC_POSTHOG_HOST: z.string().optional(),
+    NEXT_PUBLIC_SENTRY_DSN: z.string().url().optional(),
   },
 
   runtimeEnv: {
@@ -63,8 +65,10 @@ export const env = createEnv({
     ADMIN_EMAILS: process.env.ADMIN_EMAILS,
     RESEND_API_KEY: process.env.RESEND_API_KEY,
     SENTRY_DSN: process.env.SENTRY_DSN,
+    SENTRY_TRACES_SAMPLE_RATE: process.env.SENTRY_TRACES_SAMPLE_RATE,
     NEXT_PUBLIC_POSTHOG_KEY: process.env.NEXT_PUBLIC_POSTHOG_KEY,
     NEXT_PUBLIC_POSTHOG_HOST: process.env.NEXT_PUBLIC_POSTHOG_HOST,
+    NEXT_PUBLIC_SENTRY_DSN: process.env.NEXT_PUBLIC_SENTRY_DSN,
   },
 
   skipValidation: !!process.env.SKIP_ENV_VALIDATION,
