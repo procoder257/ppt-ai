@@ -15,7 +15,6 @@ export const ourFileRouter = {
       // This code runs on your server before upload
       const session = await auth();
 
-      console.log(session);
       // If you throw, the user will not be able to upload
       if (!session) throw new UploadThingError("Unauthorized");
 

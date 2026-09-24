@@ -4,6 +4,15 @@ import { NextResponse, type NextRequest } from "next/server";
 
 const { auth } = NextAuth(authConfig);
 
+function isAdminEmail(email: string | null | undefined): boolean {
+  if (!email) return false;
+  const adminEmails = (process.env.ADMIN_EMAILS ?? "")
+    .split(",")
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean);
+  return adminEmails.includes(email.toLowerCase());
+}
+
 export async function middleware(request: NextRequest) {
   let session: Session | null = null;
   try {
@@ -24,23 +33,13 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith("/about") ||
     pathname === "/cookies";
 
-  console.log("[Middleware]", {
-    path: pathname,
-    hasSession: !!session,
-    isAuthPage,
-    isPricingPage,
-    isApiRoute
-  });
-
-  // Root path handling - ALLOW ALL
+  // Landing page is public
   if (pathname === "/") {
-    console.log("[Middleware] Root path accessed - showing landing page");
     return NextResponse.next();
   }
 
   // If user is not authenticated and trying to access a protected route, redirect to sign-in
   if (!session && !isAuthPage && !isPricingPage && !isApiRoute && !isAdminPage && !isPublicPage) {
-    console.log("[Middleware] No session on protected route → /auth/signin");
     return NextResponse.redirect(
       new URL(
         `/auth/signin?callbackUrl=${encodeURIComponent(request.url)}`,
@@ -51,33 +50,20 @@ export async function middleware(request: NextRequest) {
 
   if (isAdminPage && !pathname.includes("/admin/login")) {
     if (!session) {
-      console.log("[Middleware] Admin page (Unauthenticated) → /admin/login");
       return NextResponse.redirect(new URL("/admin/login", request.url));
     }
 
-    const adminEmails = process.env.ADMIN_EMAILS?.split(",").map(e => e.trim()) || [];
-    const userEmail = session.user?.email;
-
-    console.log("[Middleware] Admin Check:", {
-      userEmail,
-      adminEmails,
-      envValue: process.env.ADMIN_EMAILS
-    });
-
-    if (!userEmail || !adminEmails.includes(userEmail)) {
-      console.log("[Middleware] Admin page (Unauthorized) → /");
+    if (!isAdminEmail(session.user?.email)) {
       return NextResponse.redirect(new URL("/", request.url));
     }
   }
 
-  // If user is on auth page but already signed in, redirect to pricing (subscription check happens there)
+  // Signed-in users don't need the auth pages
   if (isAuthPage && session) {
-    console.log("[Middleware] Already signed in on auth page → /pricing or /presentation");
     const target = session.user?.hasAccess ? "/presentation" : "/pricing";
     return NextResponse.redirect(new URL(target, request.url));
   }
 
-  console.log("[Middleware] Allowing request to continue");
   return NextResponse.next();
 }
 
