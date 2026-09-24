@@ -83,5 +83,5 @@ export async function middleware(request: NextRequest) {
 
 // Add routes that should be protected by authentication
 export const config = {
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico|testimonials|auth-visuals|terms|privacy).*)"],
+  matcher: ["/((?!api|monitoring|_next/static|_next/image|favicon.ico|testimonials|auth-visuals|terms|privacy).*)"],
 };
