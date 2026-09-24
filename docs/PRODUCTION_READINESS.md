@@ -73,7 +73,7 @@ Work is ordered by risk: security and money first, then correctness, then operab
 1. **P1-1 Harden admin login** — require `ADMIN_PASSWORD` (no default), timing-safe compare, no fake user, only sign in an existing DB user.
 2. **P1-2 PayPal webhook** — real signature verification via PayPal `verify-webhook-signature` API, parse `event_type`, idempotent payment writes, correct plan name in email.
 3. **P1-3 Subscription ownership** — activation only for subscription IDs that were created for the caller at checkout; stop leaking stack traces from checkout.
-4. **P1-4 AI route hardening** — zod validation with bounds, rate limit on `outline-with-search`, disable local model providers in production, enforce plan quota.
+4. **P1-4 AI route hardening** — zod validation with bounds, rate limit on `outline-with-search`, disable local model providers in production (plan-quota enforcement moved to follow-ups).
 
 ### Phase 2 — Correctness & quality gates
 5. **P1-5 Fix frontend hook bug + lint errors** so `pnpm lint` passes.
@@ -122,7 +122,7 @@ Legend: ⬜ todo · 🟨 in progress · ✅ PR opened · 🟩 merged
 | P1-1 | Harden admin credentials login | `claude/prod-admin-auth` | [#2](https://github.com/procoder257/ppt-ai/pull/2) | ✅ |
 | P1-2 | PayPal webhook verification + event parsing + idempotency | `claude/prod-paypal-webhook` | [#3](https://github.com/procoder257/ppt-ai/pull/3) | ✅ |
 | P1-3 | Subscription activation ownership + no stack leak | `claude/prod-paypal-ownership` | [#4](https://github.com/procoder257/ppt-ai/pull/4) | ✅ |
-| P1-4 | AI routes: validation, rate limit, provider lock, quota | `claude/prod-ai-route-hardening` | [#5](https://github.com/procoder257/ppt-ai/pull/5) | ✅ |
+| P1-4 | AI routes: validation, rate limit, provider lock (quota → follow-up) | `claude/prod-ai-route-hardening` | [#5](https://github.com/procoder257/ppt-ai/pull/5) | ✅ |
 | P1-5 | Fix ThinkingDisplay hook bug + lint errors | `claude/prod-lint-fixes` | [#6](https://github.com/procoder257/ppt-ai/pull/6) | ✅ |
 | P1-6 | Vitest runs without secrets | `claude/prod-test-harness` | [#7](https://github.com/procoder257/ppt-ai/pull/7) | ✅ |
 | P1-7 | GitHub Actions CI | `claude/prod-ci` | [#8](https://github.com/procoder257/ppt-ai/pull/8) | ✅ |
