@@ -1,19 +1,11 @@
 import { modelPicker } from "@/lib/model-picker";
 import { auth } from "@/server/auth";
 import { streamText } from "ai";
+import {
+  formatValidationError,
+  slidesRequestSchema,
+} from "@/lib/ai-request-schemas";
 import { NextResponse } from "next/server";
-// Use AI SDK types for proper type safety
-
-interface SlidesRequest {
-  title: string; // Generated presentation title
-  prompt: string; // Original user prompt/request
-  outline: string[]; // Array of main topics with markdown content
-  language: string; // Language to use for the slides
-  tone: string; // Style for image queries (optional)
-  modelProvider?: string; // Model provider (openai, ollama, or lmstudio)
-  modelId?: string; // Specific model ID for the provider
-  searchResults?: Array<{ query: string; results: unknown[] }>; // Search results for context
-}
 // TODO: Add table and chart to the available layouts
 const slidesTemplate = `
 You are an expert presentation designer.Your task is to create an engaging presentation in XML format.
@@ -238,16 +230,25 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const parsed = slidesRequestSchema.safeParse(
+      await req.json().catch(() => null),
+    );
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: formatValidationError(parsed.error) },
+        { status: 400 },
+      );
+    }
     const {
       title,
       prompt: userPrompt,
       outline,
       language,
       tone,
-      modelProvider = "openai",
+      modelProvider,
       modelId,
       searchResults,
-    } = (await req.json()) as SlidesRequest;
+    } = parsed.data;
 
     // Rate Limiting
     const { checkRateLimit } = await import("@/lib/ratelimit");
@@ -256,13 +257,6 @@ export async function POST(req: Request) {
       return NextResponse.json(
         { error: "Rate limit exceeded. Please try again later." },
         { status: 429 }
-      );
-    }
-
-    if (!title || !outline || !Array.isArray(outline) || !language) {
-      return NextResponse.json(
-        { error: "Missing required fields" },
-        { status: 400 },
       );
     }
 
@@ -306,14 +300,14 @@ export async function POST(req: Request) {
 
     // Format the prompt with template variables
     const formattedPrompt = slidesTemplate
-      .replace(/{TITLE}/g, title)
-      .replace(/{PROMPT}/g, userPrompt || "No specific prompt provided")
-      .replace(/{CURRENT_DATE}/g, currentDate)
-      .replace(/{LANGUAGE}/g, language)
-      .replace(/{TONE}/g, tone)
-      .replace(/{OUTLINE_FORMATTED}/g, outline.join("\n\n"))
-      .replace(/{TOTAL_SLIDES}/g, outline.length.toString())
-      .replace(/{SEARCH_RESULTS}/g, searchResultsText);
+      .replace(/{TITLE}/g, () => title)
+      .replace(/{PROMPT}/g, () => userPrompt || "No specific prompt provided")
+      .replace(/{CURRENT_DATE}/g, () => currentDate)
+      .replace(/{LANGUAGE}/g, () => language)
+      .replace(/{TONE}/g, () => tone)
+      .replace(/{OUTLINE_FORMATTED}/g, () => outline.join("\n\n"))
+      .replace(/{TOTAL_SLIDES}/g, () => outline.length.toString())
+      .replace(/{SEARCH_RESULTS}/g, () => searchResultsText);
 
     const result = streamText({
       model,
