@@ -1,20 +1,18 @@
-import { defineConfig } from 'vitest/config';
-import path from 'path';
-import { loadEnv } from 'vite';
+import path from "node:path";
+import { defineConfig } from "vitest/config";
 
-export default defineConfig(({ mode }) => {
-    const env = loadEnv(mode, process.cwd(), '');
-    return {
-        test: {
-            environment: 'node',
-            globals: true,
-            setupFiles: ['dotenv/config'],
-            alias: {
-                '@': path.resolve(__dirname, './src'),
-            },
-        },
-        define: {
-            'process.env': env,
-        },
-    };
+export default defineConfig({
+  test: {
+    environment: "node",
+    globals: true,
+    include: ["test/**/*.test.ts", "src/**/*.test.ts"],
+    // Unit tests must not need real secrets or a local .env file.
+    // Modules that import "@/env" skip schema validation under test.
+    env: {
+      SKIP_ENV_VALIDATION: "1",
+    },
+    alias: {
+      "@": path.resolve(__dirname, "./src"),
+    },
+  },
 });
