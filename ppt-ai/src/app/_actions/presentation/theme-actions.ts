@@ -260,6 +260,33 @@ export async function getPublicCustomThemes() {
   }
 }
 
+/**
+ * A theme is visible if it is public, owned by the viewer, or applied to a
+ * presentation the viewer can see (so shared decks render with their theme).
+ */
+async function canViewTheme(theme: {
+  id: string;
+  userId: string;
+  isPublic: boolean;
+}): Promise<boolean> {
+  if (theme.isPublic) return true;
+
+  const session = await auth();
+  const userId = session?.user?.id;
+  if (userId && theme.userId === userId) return true;
+
+  const visiblePresentation = await db.presentation.findFirst({
+    where: {
+      customThemeId: theme.id,
+      base: {
+        OR: [{ isPublic: true }, ...(userId ? [{ userId }] : [])],
+      },
+    },
+    select: { id: true },
+  });
+  return visiblePresentation !== null;
+}
+
 // Get a single theme by ID
 export async function getCustomThemeById(themeId: string) {
   try {
@@ -274,7 +301,8 @@ export async function getCustomThemeById(themeId: string) {
       },
     });
 
-    if (!theme) {
+    if (!theme || !(await canViewTheme(theme))) {
+      // Same response for "missing" and "private" so IDs can't be probed.
       return { success: false, message: "Theme not found" };
     }
 
