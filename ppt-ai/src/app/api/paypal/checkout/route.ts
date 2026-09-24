@@ -3,33 +3,36 @@ import { auth } from "@/server/auth";
 import { createPayPalSubscription } from "@/server/paypal/subscriptions";
 import { db } from "@/server/db";
 import { env } from "@/env";
+import { SubscriptionPlanName } from "@prisma/client";
+
+const VALID_PLAN_NAMES = new Set<string>(Object.values(SubscriptionPlanName));
 
 export async function POST(request: NextRequest) {
   try {
     const session = await auth();
 
-    console.log("Session data:", {
-      hasSession: !!session,
-      hasUser: !!session?.user,
-      userId: session?.user?.id,
-      userEmail: session?.user?.email,
-    });
-
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { planName, billingCycle } = await request.json();
+    const { planName, billingCycle } = (await request.json().catch(() => ({}))) as {
+      planName?: unknown;
+      billingCycle?: unknown;
+    };
 
-    if (!planName || !billingCycle) {
+    if (
+      typeof planName !== "string" ||
+      !VALID_PLAN_NAMES.has(planName) ||
+      (billingCycle !== "MONTHLY" && billingCycle !== "YEARLY")
+    ) {
       return NextResponse.json(
-        { error: "Plan Name and billing cycle are required" },
+        { error: "A valid plan name and billing cycle (MONTHLY or YEARLY) are required" },
         { status: 400 },
       );
     }
 
     const plan = await db.subscriptionPlan.findUnique({
-      where: { name: planName },
+      where: { name: planName as SubscriptionPlanName },
     });
 
     if (!plan) {
@@ -80,19 +83,10 @@ export async function POST(request: NextRequest) {
       approvalUrl,
     });
   } catch (error) {
+    // Log details server-side only; never send stack traces to the client.
     console.error("PayPal checkout error:", error);
-    console.error("Error details:", {
-      message: error instanceof Error ? error.message : "Unknown error",
-      stack: error instanceof Error ? error.stack : undefined,
-      error: error,
-    });
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json(
-      {
-        error: "Failed to create checkout session",
-        details: errorMessage,
-        stack: error instanceof Error ? error.stack : undefined
-      },
+      { error: "Failed to create checkout session" },
       { status: 500 },
     );
   }
