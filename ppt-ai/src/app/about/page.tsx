@@ -2,6 +2,7 @@ import { Metadata } from "next";
 import { Navbar } from "@/components/landing/Navbar";
 import { Footer } from "@/components/landing/Footer";
 import Link from "next/link";
+import { JsonLd } from "@/components/seo/JsonLd";
 
 export const metadata: Metadata = {
     title: "About PPT AI | The Fastest AI Presentation Maker",
@@ -24,10 +25,7 @@ export default function AboutPage() {
 
     return (
         <div className="min-h-screen bg-background text-foreground">
-            <script
-                type="application/ld+json"
-                dangerouslySetInnerHTML={{ __html: JSON.stringify(orgSchema) }}
-            />
+            <JsonLd data={orgSchema} />
             <Navbar />
             <main className="max-w-3xl mx-auto py-24 px-4 sm:px-6 lg:px-8">
                 <h1 className="text-4xl md:text-5xl font-bold mb-6 tracking-tight">About PPT AI</h1>

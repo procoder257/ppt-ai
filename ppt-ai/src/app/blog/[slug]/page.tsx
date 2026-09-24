@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { Navbar } from "@/components/landing/Navbar";
 import { Footer } from "@/components/landing/Footer";
 import Link from "next/link";
+import { JsonLd } from "@/components/seo/JsonLd";
 
 interface Props {
     params: Promise<{ slug: string }>;
@@ -263,10 +264,7 @@ export default async function BlogPostPage({ params }: Props) {
 
     return (
         <div className="min-h-screen bg-background text-foreground">
-            <script
-                type="application/ld+json"
-                dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-            />
+            <JsonLd data={jsonLd} />
             <Navbar />
             <main className="max-w-3xl mx-auto py-24 px-4 sm:px-6 lg:px-8">
                 <div className="mb-8">
@@ -280,6 +278,7 @@ export default async function BlogPostPage({ params }: Props) {
                         <h1 className="text-4xl font-bold mt-3 mb-0 text-foreground leading-tight">{post.title}</h1>
                         <p className="text-xl text-muted-foreground mt-4">{post.description}</p>
                     </header>
+                    {/* biome-ignore lint/security/noDangerouslySetInnerHtml: post.content is static HTML defined in this file, not user input. */}
                     <div dangerouslySetInnerHTML={{ __html: post.content }} />
                 </article>
 
