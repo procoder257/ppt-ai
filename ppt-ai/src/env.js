@@ -36,13 +36,29 @@ export const env = createEnv({
     PAYPAL_WEBHOOK_ID: z.string().optional(),
     PAYPAL_MODE: z.enum(["sandbox", "live"]).default("sandbox"),
     ADMIN_EMAILS: z.string().optional(),
+    // Admin credentials login is disabled unless this is set.
+    ADMIN_PASSWORD: z.string().optional(),
     RESEND_API_KEY: z.string().optional(),
+    SALES_EMAIL: z.string().optional(),
     SENTRY_DSN: z.string().url().optional(),
+
+    // Rate limiting (disabled when unset)
+    UPSTASH_REDIS_REST_URL: z.string().url().optional(),
+    UPSTASH_REDIS_REST_TOKEN: z.string().optional(),
+
+    // LLM observability (optional)
+    LANGFUSE_PUBLIC_KEY: z.string().optional(),
+    LANGFUSE_SECRET_KEY: z.string().optional(),
+    LANGFUSE_HOST: z.string().url().optional(),
+
+    // Allow Ollama / LM Studio providers in production
+    ALLOW_LOCAL_MODELS: z.enum(["true", "false"]).optional(),
   },
 
   client: {
     NEXT_PUBLIC_POSTHOG_KEY: z.string().optional(),
     NEXT_PUBLIC_POSTHOG_HOST: z.string().optional(),
+    NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION: z.string().optional(),
   },
 
   runtimeEnv: {
@@ -61,10 +77,20 @@ export const env = createEnv({
     PAYPAL_WEBHOOK_ID: process.env.PAYPAL_WEBHOOK_ID,
     PAYPAL_MODE: process.env.PAYPAL_MODE,
     ADMIN_EMAILS: process.env.ADMIN_EMAILS,
+    ADMIN_PASSWORD: process.env.ADMIN_PASSWORD,
     RESEND_API_KEY: process.env.RESEND_API_KEY,
+    SALES_EMAIL: process.env.SALES_EMAIL,
     SENTRY_DSN: process.env.SENTRY_DSN,
+    UPSTASH_REDIS_REST_URL: process.env.UPSTASH_REDIS_REST_URL,
+    UPSTASH_REDIS_REST_TOKEN: process.env.UPSTASH_REDIS_REST_TOKEN,
+    LANGFUSE_PUBLIC_KEY: process.env.LANGFUSE_PUBLIC_KEY,
+    LANGFUSE_SECRET_KEY: process.env.LANGFUSE_SECRET_KEY,
+    LANGFUSE_HOST: process.env.LANGFUSE_HOST,
+    ALLOW_LOCAL_MODELS: process.env.ALLOW_LOCAL_MODELS,
     NEXT_PUBLIC_POSTHOG_KEY: process.env.NEXT_PUBLIC_POSTHOG_KEY,
     NEXT_PUBLIC_POSTHOG_HOST: process.env.NEXT_PUBLIC_POSTHOG_HOST,
+    NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION:
+      process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION,
   },
 
   skipValidation: !!process.env.SKIP_ENV_VALIDATION,
