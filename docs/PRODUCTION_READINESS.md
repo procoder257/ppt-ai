@@ -17,7 +17,7 @@ Each work item ships as its **own pull request** against `master`. The tracker a
 | Typecheck | `pnpm type` | ✅ passes (0 errors) |
 | Lint | `pnpm lint` (Biome) | ❌ 9 errors, 74 warnings |
 | Unit tests | `npx vitest run` | ❌ 1 of 2 files fails — env validation runs on import, no test env |
-| Build | `SKIP_ENV_VALIDATION=1 pnpm build` | see tracker item P1-7 |
+| Build | `SKIP_ENV_VALIDATION=1 pnpm build` | ❌ fails collecting page data: Tavily client needs `TAVILY_API_KEY` at import time; `metadataBase` needs a valid `NEXTAUTH_URL` (fixed in P1-7) |
 | CI | `.github/workflows` | ❌ none — nothing gates merges |
 
 ### Backend / API
@@ -105,13 +105,13 @@ Legend: ⬜ todo · 🟨 in progress · ✅ PR opened · 🟩 merged
 | ID | Item | Branch | PR | Status |
 |---|---|---|---|---|
 | P0 | Audit + this plan | `claude/project-production-readiness-q4pi9w` | — | 🟨 |
-| P1-1 | Harden admin credentials login | `claude/prod-admin-auth` | — | ⬜ |
-| P1-2 | PayPal webhook verification + event parsing + idempotency | `claude/prod-paypal-webhook` | — | ⬜ |
-| P1-3 | Subscription activation ownership + no stack leak | `claude/prod-paypal-ownership` | — | ⬜ |
-| P1-4 | AI routes: validation, rate limit, provider lock, quota | `claude/prod-ai-route-hardening` | — | ⬜ |
-| P1-5 | Fix ThinkingDisplay hook bug + lint errors | `claude/prod-lint-fixes` | — | ⬜ |
-| P1-6 | Vitest runs without secrets | `claude/prod-test-harness` | — | ⬜ |
-| P1-7 | GitHub Actions CI | `claude/prod-ci` | — | ⬜ |
+| P1-1 | Harden admin credentials login | `claude/prod-admin-auth` | [#2](https://github.com/procoder257/ppt-ai/pull/2) | ✅ |
+| P1-2 | PayPal webhook verification + event parsing + idempotency | `claude/prod-paypal-webhook` | [#3](https://github.com/procoder257/ppt-ai/pull/3) | ✅ |
+| P1-3 | Subscription activation ownership + no stack leak | `claude/prod-paypal-ownership` | [#4](https://github.com/procoder257/ppt-ai/pull/4) | ✅ |
+| P1-4 | AI routes: validation, rate limit, provider lock, quota | `claude/prod-ai-route-hardening` | [#5](https://github.com/procoder257/ppt-ai/pull/5) | ✅ |
+| P1-5 | Fix ThinkingDisplay hook bug + lint errors | `claude/prod-lint-fixes` | [#6](https://github.com/procoder257/ppt-ai/pull/6) | ✅ |
+| P1-6 | Vitest runs without secrets | `claude/prod-test-harness` | [#7](https://github.com/procoder257/ppt-ai/pull/7) | ✅ |
+| P1-7 | GitHub Actions CI | `claude/prod-ci` | [#8](https://github.com/procoder257/ppt-ai/pull/8) | ✅ |
 | P2-1 | Prisma baseline migration + indexes | `claude/prod-db-migrations` | — | ⬜ |
 | P2-2 | `/api/health` endpoint | `claude/prod-health-headers` | — | ⬜ |
 | P2-3 | Security headers | `claude/prod-health-headers` | — | ⬜ |
