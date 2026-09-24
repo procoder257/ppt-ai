@@ -32,11 +32,13 @@ export function ThinkingDisplay({
   const hasClosingTag = /<\/think>/i.test(thinking);
   const thinkingContent = extractThinkingContent(thinking);
 
+  // Hooks must run on every render, before any early return.
+  const [open, setOpen] = useState(false);
+
   // Only render when there is actual thinking content, not just loading
   if (!thinkingContent) {
     return null;
   }
-  const [open, setOpen] = useState(false);
 
   return (
     <Card
