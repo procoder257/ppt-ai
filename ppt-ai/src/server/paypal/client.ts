@@ -51,6 +51,10 @@ export async function getAccessToken(): Promise<string> {
     },
   });
 
+  if (!response.ok) {
+    throw new Error(`Failed to get PayPal access token: ${response.status}`);
+  }
+
   const data = await response.json();
   return data.access_token;
 }
