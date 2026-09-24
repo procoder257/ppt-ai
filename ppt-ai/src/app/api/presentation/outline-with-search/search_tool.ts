@@ -3,7 +3,13 @@ import { tavily } from "@tavily/core";
 import { type Tool } from "ai";
 import z from "zod";
 
-const tavilyService = tavily({ apiKey: env.TAVILY_API_KEY });
+// Created on first use so importing this module (e.g. during `next build`)
+// doesn't require TAVILY_API_KEY.
+let tavilyService: ReturnType<typeof tavily> | undefined;
+function getTavily() {
+  tavilyService ??= tavily({ apiKey: env.TAVILY_API_KEY });
+  return tavilyService;
+}
 
 export const search_tool: Tool = {
   description:
@@ -13,7 +19,7 @@ export const search_tool: Tool = {
   }),
   execute: async ({ query }: { query: string }) => {
     try {
-      const response = await tavilyService.search(query, { max_results: 5 });
+      const response = await getTavily().search(query, { max_results: 5 });
       return JSON.stringify(response);
     } catch (error) {
       console.error("Search error:", error);
