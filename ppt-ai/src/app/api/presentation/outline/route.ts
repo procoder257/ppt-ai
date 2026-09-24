@@ -1,15 +1,11 @@
 import { modelPicker } from "@/lib/model-picker";
 import { auth } from "@/server/auth";
 import { streamText } from "ai";
+import {
+  formatValidationError,
+  outlineRequestSchema,
+} from "@/lib/ai-request-schemas";
 import { NextResponse } from "next/server";
-
-interface OutlineRequest {
-  prompt: string;
-  numberOfCards: number;
-  language: string;
-  modelProvider?: string;
-  modelId?: string;
-}
 
 const outlineTemplate = `Given the following presentation topic and requirements, generate a structured outline with {numberOfCards} main topics in markdown format.
 The outline should be in {language} language and it very important.
@@ -56,13 +52,17 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const {
-      prompt,
-      numberOfCards,
-      language,
-      modelProvider = "openai",
-      modelId,
-    } = (await req.json()) as OutlineRequest;
+    const parsed = outlineRequestSchema.safeParse(
+      await req.json().catch(() => null),
+    );
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: formatValidationError(parsed.error) },
+        { status: 400 },
+      );
+    }
+    const { prompt, numberOfCards, language, modelProvider, modelId } =
+      parsed.data;
 
     // Rate Limiting
     const { checkRateLimit } = await import("@/lib/ratelimit");
@@ -71,13 +71,6 @@ export async function POST(req: Request) {
       return NextResponse.json(
         { error: "Rate limit exceeded. Please try again later." },
         { status: 429 }
-      );
-    }
-
-    if (!prompt || !numberOfCards || !language) {
-      return NextResponse.json(
-        { error: "Missing required fields" },
-        { status: 400 },
       );
     }
     const languageMap: Record<string, string> = {
@@ -107,10 +100,10 @@ export async function POST(req: Request) {
 
     // Format the prompt with template variables
     const formattedPrompt = outlineTemplate
-      .replace(/{numberOfCards}/g, numberOfCards.toString())
-      .replace(/{language}/g, actualLanguage)
-      .replace(/{currentDate}/g, currentDate)
-      .replace(/{prompt}/g, prompt);
+      .replace(/{numberOfCards}/g, () => numberOfCards.toString())
+      .replace(/{language}/g, () => actualLanguage)
+      .replace(/{currentDate}/g, () => currentDate)
+      .replace(/{prompt}/g, () => prompt);
 
     const result = streamText({
       model,

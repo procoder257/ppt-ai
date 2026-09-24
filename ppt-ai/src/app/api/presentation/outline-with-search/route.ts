@@ -1,16 +1,12 @@
 import { modelPicker } from "@/lib/model-picker";
 import { auth } from "@/server/auth";
 import { streamText } from "ai";
+import {
+  formatValidationError,
+  outlineRequestSchema,
+} from "@/lib/ai-request-schemas";
 import { NextResponse } from "next/server";
 import { search_tool } from "./search_tool";
-
-interface OutlineRequest {
-  prompt: string;
-  numberOfCards: number;
-  language: string;
-  modelProvider?: string;
-  modelId?: string;
-}
 
 const outlineSystemPrompt = `You are an expert presentation outline generator. Your task is to create a comprehensive and engaging presentation outline based on the user's topic.
 
@@ -61,18 +57,25 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const {
-      prompt,
-      numberOfCards,
-      language,
-      modelProvider = "openai",
-      modelId,
-    } = (await req.json()) as OutlineRequest;
-
-    if (!prompt || !numberOfCards || !language) {
+    const parsed = outlineRequestSchema.safeParse(
+      await req.json().catch(() => null),
+    );
+    if (!parsed.success) {
       return NextResponse.json(
-        { error: "Missing required fields" },
+        { error: formatValidationError(parsed.error) },
         { status: 400 },
+      );
+    }
+    const { prompt, numberOfCards, language, modelProvider, modelId } =
+      parsed.data;
+
+    // Rate limiting: this route can also trigger several paid web searches.
+    const { checkRateLimit } = await import("@/lib/ratelimit");
+    const { success } = await checkRateLimit(session.user.id);
+    if (!success) {
+      return NextResponse.json(
+        { error: "Rate limit exceeded. Please try again later." },
+        { status: 429 },
       );
     }
 
@@ -105,8 +108,8 @@ export async function POST(req: Request) {
     const result = streamText({
       model,
       system: outlineSystemPrompt
-        .replace("{numberOfCards}", numberOfCards.toString())
-        .replace("{language}", actualLanguage)
+        .replace("{numberOfCards}", () => numberOfCards.toString())
+        .replace("{language}", () => actualLanguage)
         .replace("{currentDate}", currentDate),
       messages: [
         {
