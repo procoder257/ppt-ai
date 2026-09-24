@@ -37,6 +37,7 @@ Each work item ships as its **own pull request** against `master`. The tracker a
 | 🟡 Medium | Server actions | `getCustomThemeById` returns private themes to anyone who knows the ID. |
 | 🟡 Medium | Middleware | Logs every request plus the full `ADMIN_EMAILS` list and user emails (PII in logs). |
 | 🟡 Medium | API | `POST /api/contact/sales` has no rate limit, no length validation, and never notifies anyone (TODO). |
+| 🟠 High | Ops | Sentry never initializes: no `instrumentation.ts`, client config reads non-public `SENTRY_DSN`, 100% trace sampling, tunnel route behind auth middleware. |
 | 🟡 Medium | Ops | No health-check endpoint for uptime monitors / load balancers. |
 | 🟡 Medium | Ops | No security headers (HSTS, X-Frame-Options, Referrer-Policy, Permissions-Policy, nosniff). |
 
@@ -89,8 +90,21 @@ Work is ordered by risk: security and money first, then correctness, then operab
 12. **P2-5 Private theme leak** fix in `getCustomThemeById`.
 13. **P2-6 Contact-sales endpoint** — validation, rate limit, email notification.
 14. **P2-7 Env hygiene** — complete `.env.example` + `env.js` declarations.
+15. **P2-8 Sentry wiring** — add `instrumentation.ts` / `instrumentation-client.ts`, sane trace sampling (found during implementation).
+
+### Suggested merge order
+1. #6 (lint) and #7 (tests), then #8 (CI), so every later PR is checked by CI.
+2. Security/billing: #2, #3, #4, #5. Set `ADMIN_PASSWORD` and `PAYPAL_WEBHOOK_ID` first.
+3. #9 (migrations). Run the one-time `migrate resolve` step from `docs/DATABASE.md`.
+4. The rest in any order: #10, #11, #12, #13, #14, #15. #11 and #15 both edit the middleware `matcher`/logging, so expect a small conflict in whichever merges second.
 
 ### Out of scope for this pass (follow-ups)
+- Enforce plan quotas (`PLAN_LIMITS`) on generation. Nothing records `presentations_created` yet, and turning this on changes what free users can do, so it's a product decision.
+- Content-Security-Policy (start in report-only mode).
+- Email sender still `onboarding@resend.dev`; verify a domain in Resend.
+- Add an email field to the Contact Sales modal.
+- Usage tracking for `/outline-with-search`.
+- `layout.tsx` JSON-LD `SearchAction` points to `/search`, which doesn't exist.
 - Migrating `middleware.ts` → `proxy.ts` (Next 16 deprecation) — needs runtime testing with NextAuth edge.
 - Stripe support (schema columns exist, no code).
 - E2E tests (Playwright) against a seeded database.
@@ -104,7 +118,7 @@ Legend: ⬜ todo · 🟨 in progress · ✅ PR opened · 🟩 merged
 
 | ID | Item | Branch | PR | Status |
 |---|---|---|---|---|
-| P0 | Audit + this plan | `claude/project-production-readiness-q4pi9w` | — | 🟨 |
+| P0 | Audit + this plan | `claude/project-production-readiness-q4pi9w` | — | ✅ |
 | P1-1 | Harden admin credentials login | `claude/prod-admin-auth` | [#2](https://github.com/procoder257/ppt-ai/pull/2) | ✅ |
 | P1-2 | PayPal webhook verification + event parsing + idempotency | `claude/prod-paypal-webhook` | [#3](https://github.com/procoder257/ppt-ai/pull/3) | ✅ |
 | P1-3 | Subscription activation ownership + no stack leak | `claude/prod-paypal-ownership` | [#4](https://github.com/procoder257/ppt-ai/pull/4) | ✅ |
@@ -112,13 +126,14 @@ Legend: ⬜ todo · 🟨 in progress · ✅ PR opened · 🟩 merged
 | P1-5 | Fix ThinkingDisplay hook bug + lint errors | `claude/prod-lint-fixes` | [#6](https://github.com/procoder257/ppt-ai/pull/6) | ✅ |
 | P1-6 | Vitest runs without secrets | `claude/prod-test-harness` | [#7](https://github.com/procoder257/ppt-ai/pull/7) | ✅ |
 | P1-7 | GitHub Actions CI | `claude/prod-ci` | [#8](https://github.com/procoder257/ppt-ai/pull/8) | ✅ |
-| P2-1 | Prisma baseline migration + indexes | `claude/prod-db-migrations` | — | ⬜ |
-| P2-2 | `/api/health` endpoint | `claude/prod-health-headers` | — | ⬜ |
-| P2-3 | Security headers | `claude/prod-health-headers` | — | ⬜ |
-| P2-4 | Remove PII/noisy middleware logs | `claude/prod-middleware-logs` | — | ⬜ |
-| P2-5 | Private custom theme leak | `claude/prod-theme-access` | — | ⬜ |
-| P2-6 | Contact-sales validation, rate limit, email | `claude/prod-contact-sales` | — | ⬜ |
-| P2-7 | `.env.example` + `env.js` completeness | `claude/prod-env-hygiene` | — | ⬜ |
+| P2-1 | Prisma baseline migration + indexes | `claude/prod-db-migrations` | [#9](https://github.com/procoder257/ppt-ai/pull/9) | ✅ |
+| P2-2 | `/api/health` endpoint | `claude/prod-health-headers` | [#10](https://github.com/procoder257/ppt-ai/pull/10) | ✅ |
+| P2-3 | Security headers | `claude/prod-health-headers` | [#10](https://github.com/procoder257/ppt-ai/pull/10) | ✅ |
+| P2-4 | Remove PII/noisy middleware logs | `claude/prod-middleware-logs` | [#11](https://github.com/procoder257/ppt-ai/pull/11) | ✅ |
+| P2-5 | Private custom theme leak | `claude/prod-theme-access` | [#12](https://github.com/procoder257/ppt-ai/pull/12) | ✅ |
+| P2-6 | Contact-sales validation, rate limit, email | `claude/prod-contact-sales` | [#13](https://github.com/procoder257/ppt-ai/pull/13) | ✅ |
+| P2-7 | `.env.example` + `env.js` completeness | `claude/prod-env-hygiene` | [#14](https://github.com/procoder257/ppt-ai/pull/14) | ✅ |
+| P2-8 | Sentry never initialized (no `instrumentation.ts`, client DSN unreadable) | `claude/prod-sentry-instrumentation` | [#15](https://github.com/procoder257/ppt-ai/pull/15) | ✅ |
 
 ## 4. Deploy checklist (after PRs merge)
 
@@ -127,4 +142,5 @@ Legend: ⬜ todo · 🟨 in progress · ✅ PR opened · 🟩 merged
 - [ ] Set `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` (rate limiting is off without them).
 - [ ] Existing database: run `pnpm prisma migrate resolve --applied 0_init` once, then `pnpm db:migrate:deploy` on each deploy.
 - [ ] Point uptime monitoring at `/api/health`.
+- [ ] Set `NEXT_PUBLIC_SENTRY_DSN` (same value as `SENTRY_DSN`) and optionally `SALES_EMAIL`.
 - [ ] Enable required status checks on `master` for the CI workflow.
