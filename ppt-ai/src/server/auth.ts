@@ -5,6 +5,7 @@ import { type Adapter } from "next-auth/adapters";
 import { authConfig } from "./auth.config";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { EmailService } from "./email/service";
+import { verifyAdminCredentials } from "./admin-credentials";
 
 export const { auth, handlers, signIn, signOut } = NextAuth({
   ...authConfig,
@@ -86,36 +87,39 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
         password: { label: "Password", type: "password" }
       },
       async authorize(credentials) {
-        const adminEmails = process.env.ADMIN_EMAILS?.split(",").map(e => e.trim()) || [];
-        const adminPassword = process.env.ADMIN_PASSWORD || "admin123";
+        const isValid = verifyAdminCredentials(
+          credentials?.email,
+          credentials?.password,
+          {
+            adminEmails: process.env.ADMIN_EMAILS,
+            adminPassword: process.env.ADMIN_PASSWORD,
+          },
+        );
+        if (!isValid) return null;
 
-        if (!credentials?.email || !credentials?.password) return null;
-
-        if (adminEmails.includes(credentials.email as string) && credentials.password === adminPassword) {
-          const user = await db.user.findUnique({
-            where: { email: credentials.email as string }
-          });
-
-          if (user) {
-            return {
-              id: user.id,
-              name: user.name,
-              email: user.email,
-              image: user.image,
-              role: "ADMIN",
-              hasAccess: true
-            };
-          } else {
-            return {
-              id: "admin-temp-id",
-              name: "Admin User",
-              email: credentials.email as string,
-              role: "ADMIN",
-              hasAccess: true
-            };
-          }
+        // Admins must already have a real account (e.g. from a Google sign-in);
+        // never mint a session for a user that doesn't exist in the database.
+        const user = await db.user.findFirst({
+          where: {
+            email: {
+              equals: (credentials.email as string).trim(),
+              mode: "insensitive",
+            },
+          },
+        });
+        if (!user) {
+          console.warn("[Auth] Admin login rejected: no user record for admin email");
+          return null;
         }
-        return null;
+
+        return {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          image: user.image,
+          role: "ADMIN",
+          hasAccess: true,
+        };
       }
     })
   ],
